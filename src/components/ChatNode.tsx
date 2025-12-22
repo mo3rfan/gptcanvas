@@ -110,11 +110,6 @@ export const ChatNode: React.FC<ChatNodeProps> = ({
                     : 'bg-zinc-900 border-zinc-800 text-zinc-100 shadow-black/40'
                     }`}
             >
-                {/* Debug Position Badge */}
-                <div className="absolute -top-3 -right-3 bg-zinc-800 border border-zinc-700 rounded px-1.5 py-0.5 text-[8px] text-zinc-500 font-mono z-20">
-                    {node.role.toUpperCase()} | BR:{String(!!node.isBranch)}
-                </div>
-
                 {node.highlightedText && (
                     <div className="flex items-center gap-2 text-[10px] uppercase font-black text-zinc-500 mb-2 tracking-widest border-b border-zinc-800 pb-2">
                         <span className="bg-zinc-800 px-1.5 py-0.5 rounded text-zinc-400">Context</span>

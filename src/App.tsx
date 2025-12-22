@@ -158,7 +158,7 @@ function App() {
           </div>
         )}
         <div className="absolute bottom-4 left-4 text-[10px] text-zinc-700 font-mono pointer-events-none select-none">
-          v1.0.4 - SELECTION_PERSISTENCE_FIXED
+          v1.0.5 - PRESTIGE_BUILD_UX_POLISHED
         </div>
       </main>
     </div>

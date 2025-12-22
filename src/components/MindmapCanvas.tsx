@@ -78,7 +78,8 @@ export const MindmapCanvas: React.FC<CanvasProps> = ({ state, onBranch, onReply,
     };
 
     const handleMouseDown = (e: React.MouseEvent) => {
-        if (e.button === 1 || (e.button === 0 && e.altKey)) {
+        // Drag if middle click OR left click directly on the canvas background
+        if (e.button === 1 || (e.button === 0 && e.target === e.currentTarget)) {
             setIsDragging(true);
         }
     };
@@ -191,8 +192,8 @@ export const MindmapCanvas: React.FC<CanvasProps> = ({ state, onBranch, onReply,
                 >Reset View</button>
             </div>
 
-            <div className="absolute top-4 left-4 text-[10px] text-zinc-600 pointer-events-none">
-                Ctrl + Scroll to Zoom | Middle Click / Alt + Drag to Pan
+            <div className="absolute top-4 left-4 text-[10px] text-zinc-600 pointer-events-none uppercase font-black tracking-widest">
+                Ctrl + Scroll to Zoom | Left Click & Drag Background to Pan
             </div>
         </div>
     );
