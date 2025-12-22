@@ -46,3 +46,70 @@ console.log("Ready for rich content!");
 
 Highlight any text to start a branch!`;
 };
+export const fetchLLMResponse = async (
+    apiUrl: string,
+    apiKey: string,
+    prompt: string,
+    context: string | null,
+    onToken: (token: string) => void
+) => {
+    const messages = [];
+
+    if (context) {
+        messages.push({
+            role: "system",
+            content: `You are a helpful assistant. Provide a concise follow-up based on the following context: "${context}". Use Markdown and LaTeX where appropriate.`
+        });
+    }
+
+    messages.push({ role: "user", content: prompt });
+
+    try {
+        const response = await fetch(`${apiUrl}/chat/completions`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${apiKey}`,
+            },
+            body: JSON.stringify({
+                model: "gpt-3.5-turbo", // Default or user choice
+                messages,
+                stream: true,
+            }),
+        });
+
+        if (!response.ok) {
+            throw new Error(`API request failed with status ${response.status}`);
+        }
+
+        const reader = response.body?.getReader();
+        const decoder = new TextDecoder();
+
+        if (!reader) return;
+
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            const chunk = decoder.decode(value);
+            const lines = chunk.split("\n");
+
+            for (const line of lines) {
+                if (line.startsWith("data: ")) {
+                    const data = line.slice(6);
+                    if (data === "[DONE]") break;
+                    try {
+                        const json = JSON.parse(data);
+                        const token = json.choices[0]?.delta?.content || "";
+                        if (token) onToken(token);
+                    } catch (e) {
+                        // Handle potential partial JSON or other errors
+                    }
+                }
+            }
+        }
+    } catch (error) {
+        console.error("LLM Fetch Error:", error);
+        onToken(`\n\n**Error:** ${error instanceof Error ? error.message : "Failed to connect to the API. Check your settings and API key."}`);
+    }
+};

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { SettingsSidebar } from './components/SettingsSidebar';
 import { MindmapCanvas } from './components/MindmapCanvas';
 import type { ChatState, MessageNode, Settings } from './types';
-import { simulateStreaming, mockLLMResponse } from './utils';
+import { simulateStreaming, mockLLMResponse, fetchLLMResponse } from './utils';
 import { v4 as uuidv4 } from 'uuid';
 
 const INITIAL_SETTINGS: Settings = {
@@ -80,13 +80,29 @@ function App() {
       };
     });
 
-    // 3. Simulate Streaming for the assistant node
-    const response = mockLLMResponse(prompt, highlightedText);
-    let fullContent = '';
-    await simulateStreaming(response, (token) => {
-      fullContent += token;
-      updateNodeContent(assistantId, fullContent);
-    });
+    // 3. Get Response
+    const isMock = new URLSearchParams(window.location.search).has('mock');
+
+    if (isMock) {
+      const response = mockLLMResponse(prompt, highlightedText);
+      let fullContent = '';
+      await simulateStreaming(response, (token) => {
+        fullContent += token;
+        updateNodeContent(assistantId, fullContent);
+      });
+    } else {
+      let fullContent = '';
+      await fetchLLMResponse(
+        settings.apiUrl,
+        settings.apiKey,
+        prompt,
+        highlightedText || null,
+        (token) => {
+          fullContent += token;
+          updateNodeContent(assistantId, fullContent);
+        }
+      );
+    }
   };
 
   const handleBranch = (parentId: string, highlightedText: string, prompt: string) => {
@@ -169,7 +185,7 @@ function App() {
           </div>
         )}
         <div className="absolute bottom-4 left-4 text-[10px] text-zinc-700 font-mono pointer-events-none select-none">
-          v1.3.1 - SCROLL_ZOOM_DEFAULT
+          v1.4.0 - LIVE_API_CONNECTED
         </div>
       </main>
     </div>
