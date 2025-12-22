@@ -169,7 +169,7 @@ function App() {
           </div>
         )}
         <div className="absolute bottom-4 left-4 text-[10px] text-zinc-700 font-mono pointer-events-none select-none">
-          v1.2.1 - REPOSITORY_HISTORY_REFINED
+          v1.3.0 - RICH_RENDERING_READY
         </div>
       </main>
     </div>
