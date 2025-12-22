@@ -82,6 +82,19 @@ export const MindmapCanvas: React.FC<CanvasProps> = ({ state, onBranch, onReply,
     }
 
     const handleWheel = (e: React.WheelEvent) => {
+        // Check if the target element or any parent is scrollable
+        let element = e.target as HTMLElement;
+        while (element && element !== canvasRef.current) {
+            const hasOverflow = element.scrollHeight > element.clientHeight;
+            const isScrollable = window.getComputedStyle(element).overflowY !== 'hidden';
+
+            if (hasOverflow && isScrollable) {
+                // Let the browser handle scrolling naturally
+                return;
+            }
+            element = element.parentElement as HTMLElement;
+        }
+
         // Zoom by default, or pan if holding Ctrl (standard map behavior)
         if (!e.ctrlKey) {
             const zoomSpeed = 0.001;

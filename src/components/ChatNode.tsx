@@ -308,7 +308,11 @@ export const ChatNode: React.FC<ChatNodeProps> = ({
                     ref={contentRef}
                     onMouseUp={handleMouseUp}
                     onContextMenu={handleContextMenu}
-                    className="text-[15px] leading-relaxed cursor-text selection:bg-blue-500/30 whitespace-normal font-medium markdown-container"
+                    className="text-[15px] leading-relaxed cursor-text selection:bg-blue-500/30 whitespace-normal font-medium markdown-container max-h-[500px] overflow-y-auto scrollbar-thin scrollbar-thumb-zinc-700 scrollbar-track-transparent"
+                    style={{
+                        scrollbarWidth: 'thin',
+                        scrollbarColor: '#3f3f46 transparent'
+                    }}
                 >
                     {memoizedContent}
                 </div>

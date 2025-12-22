@@ -253,7 +253,7 @@ function App() {
           </div>
         )}
         <div className="absolute bottom-4 left-4 text-[10px] text-zinc-700 font-mono pointer-events-none select-none">
-          v2.0.0 - TOKEN_STATS
+          v2.1.0 - SCROLLABLE_RESPONSES
         </div>
       </main>
     </div>
