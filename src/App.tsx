@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { SettingsSidebar } from './components/SettingsSidebar';
 import { MindmapCanvas } from './components/MindmapCanvas';
 import type { ChatState, MessageNode, Settings } from './types';
-import { simulateStreaming, mockLLMResponse, fetchLLMResponse } from './utils';
+import { simulateStreaming, mockLLMResponse, fetchLLMResponse, estimateTokens } from './utils';
 import { v4 as uuidv4 } from 'uuid';
 
 const STORAGE_KEY = 'gptcanvas_settings';
@@ -25,6 +25,7 @@ function App() {
     selectedModel: settings.model,
     apiUrl: settings.apiUrl,
     apiKey: settings.apiKey,
+    tokenStats: { input: 0, output: 0, total: 0 },
   }));
 
   // Persist settings whenever they change
@@ -52,6 +53,20 @@ function App() {
   const handlePrompt = async (parentId: string | null, prompt: string, highlightedText?: string) => {
     const userId = uuidv4();
     const assistantId = uuidv4();
+
+    // Calculate input tokens
+    const inputText = highlightedText ? `${highlightedText}\n${prompt}` : prompt;
+    const inputTokens = estimateTokens(inputText);
+
+    // Update input token count
+    setState(prev => ({
+      ...prev,
+      tokenStats: {
+        ...prev.tokenStats,
+        input: prev.tokenStats.input + inputTokens,
+        total: prev.tokenStats.total + inputTokens,
+      }
+    }));
 
     // 1. Prepare Nodes
     const userNode: MessageNode = {
@@ -106,6 +121,16 @@ function App() {
       await simulateStreaming(response, (token) => {
         fullContent += token;
         updateNodeContent(assistantId, fullContent);
+        // Update output tokens in real-time
+        const outputTokens = estimateTokens(token);
+        setState(prev => ({
+          ...prev,
+          tokenStats: {
+            ...prev.tokenStats,
+            output: prev.tokenStats.output + outputTokens,
+            total: prev.tokenStats.total + outputTokens,
+          }
+        }));
       });
     } else {
       let fullContent = '';
@@ -118,6 +143,16 @@ function App() {
         (token: string) => {
           fullContent += token;
           updateNodeContent(assistantId, fullContent);
+          // Update output tokens in real-time
+          const outputTokens = estimateTokens(token);
+          setState(prev => ({
+            ...prev,
+            tokenStats: {
+              ...prev.tokenStats,
+              output: prev.tokenStats.output + outputTokens,
+              total: prev.tokenStats.total + outputTokens,
+            }
+          }));
         }
       );
     }
@@ -169,6 +204,7 @@ function App() {
       <SettingsSidebar
         settings={settings}
         onSettingsChange={setSettings}
+        tokenStats={state.tokenStats}
       />
 
       <main className="flex-1 flex flex-col relative">
@@ -217,7 +253,7 @@ function App() {
           </div>
         )}
         <div className="absolute bottom-4 left-4 text-[10px] text-zinc-700 font-mono pointer-events-none select-none">
-          v1.9.1 - DYNAMIC_LAYOUT
+          v2.0.0 - TOKEN_STATS
         </div>
       </main>
     </div>

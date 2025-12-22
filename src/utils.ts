@@ -1,3 +1,8 @@
+// Simple token estimation: ~4 characters per token
+export const estimateTokens = (text: string): number => {
+    return Math.ceil(text.length / 4);
+};
+
 export const simulateStreaming = async (
     content: string,
     onToken: (token: string) => void

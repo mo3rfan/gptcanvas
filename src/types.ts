@@ -13,12 +13,19 @@ export interface MessageNode {
     position?: { x: number; y: number };
 }
 
+export interface TokenStats {
+    input: number;
+    output: number;
+    total: number;
+}
+
 export interface ChatState {
     nodes: Record<string, MessageNode>;
     rootId: string | null;
     selectedModel: string;
     apiUrl: string;
     apiKey: string;
+    tokenStats: TokenStats;
 }
 
 export interface Settings {

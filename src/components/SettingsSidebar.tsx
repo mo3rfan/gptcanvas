@@ -1,11 +1,12 @@
-import type { Settings } from '../types';
+import type { Settings, TokenStats } from '../types';
 
 interface SidebarProps {
     settings: Settings;
     onSettingsChange: (settings: Settings) => void;
+    tokenStats: TokenStats;
 }
 
-export const SettingsSidebar: React.FC<SidebarProps> = ({ settings, onSettingsChange }) => {
+export const SettingsSidebar: React.FC<SidebarProps> = ({ settings, onSettingsChange, tokenStats }) => {
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
         onSettingsChange({ ...settings, [name]: value });
@@ -16,7 +17,7 @@ export const SettingsSidebar: React.FC<SidebarProps> = ({ settings, onSettingsCh
             <h2 className="text-xl font-bold mb-2">LLM Settings</h2>
 
             <div className="flex flex-col gap-1">
-                <label className="text-xs font-semibold uppercase text-zinc-500">API Box URL</label>
+                <label className="text-xs font-semibold uppercase text-zinc-500">API URL</label>
                 <input
                     type="text"
                     name="apiUrl"
@@ -46,13 +47,35 @@ export const SettingsSidebar: React.FC<SidebarProps> = ({ settings, onSettingsCh
                     name="model"
                     value={settings.model}
                     onChange={handleChange}
-                    placeholder="gpt-3.5-turbo"
+                    placeholder="gpt-5-mini"
                     className="bg-zinc-800 border border-zinc-700 rounded p-2 text-sm focus:outline-none focus:border-blue-500"
                 />
             </div>
 
+            {/* Token Statistics */}
+            <div className="mt-6 p-4 bg-gradient-to-br from-blue-900/20 to-indigo-900/20 border border-blue-800/30 rounded-lg">
+                <h3 className="text-xs font-semibold uppercase text-blue-400 mb-3">Token Usage (Current Session)</h3>
+                <div className="flex flex-col gap-2">
+                    <div className="flex justify-between items-center">
+                        <span className="text-xs text-zinc-400">Input</span>
+                        <span className="text-sm font-mono font-bold text-green-400">{tokenStats.input.toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                        <span className="text-xs text-zinc-400">Output</span>
+                        <span className="text-sm font-mono font-bold text-blue-400">{tokenStats.output.toLocaleString()}</span>
+                    </div>
+                    <div className="h-px bg-zinc-700 my-1"></div>
+                    <div className="flex justify-between items-center">
+                        <span className="text-xs font-semibold text-zinc-300">Total</span>
+                        <span className="text-base font-mono font-bold bg-gradient-to-r from-green-400 to-blue-400 bg-clip-text text-transparent">
+                            {tokenStats.total.toLocaleString()}
+                        </span>
+                    </div>
+                </div>
+            </div>
+
             <div className="mt-auto text-[10px] text-zinc-600">
-                Highlight any text in the chat to branch out.
+                Note: API settings will persist in local storage.
             </div>
         </div>
     );
