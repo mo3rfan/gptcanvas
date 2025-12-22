@@ -33,6 +33,7 @@ export const ChatNode: React.FC<ChatNodeProps> = ({
     const [branchText, setBranchText] = useState<string | null>(null);
     const [input, setInput] = useState('');
     const [isThinkingExpanded, setIsThinkingExpanded] = useState(false);
+    const [contextMenu, setContextMenu] = useState<{ x: number, y: number, show: boolean }>({ x: 0, y: 0, show: false });
     const contentRef = useRef<HTMLDivElement>(null);
     const thinkingRef = useRef<HTMLDivElement>(null);
 
@@ -68,11 +69,30 @@ export const ChatNode: React.FC<ChatNodeProps> = ({
         }
     };
 
+    const handleContextMenu = (e: React.MouseEvent) => {
+        const sel = window.getSelection();
+        if (sel && sel.toString().trim() && contentRef.current?.contains(sel.anchorNode)) {
+            e.preventDefault();
+            setContextMenu({ x: e.clientX, y: e.clientY, show: true });
+        }
+    };
+
+    const closeContextMenu = () => {
+        setContextMenu(prev => ({ ...prev, show: false }));
+    };
+
+    useEffect(() => {
+        const handleGlobalClick = () => closeContextMenu();
+        window.addEventListener('click', handleGlobalClick);
+        return () => window.removeEventListener('click', handleGlobalClick);
+    }, []);
+
     const startFollowUp = (branch: boolean) => {
         setIsBranching(branch);
         setBranchText(branch ? selection?.text || null : null);
         setShowInput(true);
         setSelection(null);
+        closeContextMenu();
         onActive?.(node.id);
     };
 
@@ -124,8 +144,12 @@ export const ChatNode: React.FC<ChatNodeProps> = ({
                         {(isThinkingExpanded || !isThinkingDone) && (
                             <div
                                 ref={thinkingRef}
-                                className={`p-4 text-[13px] font-mono leading-relaxed text-zinc-400 overflow-y-auto transition-all duration-300 ease-in-out ${isThinkingExpanded ? 'max-h-[300px]' : 'max-h-[100px]'
+                                className={`p-4 text-[13px] font-mono leading-relaxed text-zinc-400 overflow-y-auto transition-all duration-300 ease-in-out scrollbar-thin scrollbar-thumb-zinc-700 scrollbar-track-transparent ${isThinkingExpanded ? 'max-h-[300px]' : 'max-h-[100px]'
                                     }`}
+                                style={{
+                                    scrollbarWidth: 'thin',
+                                    scrollbarColor: '#3f3f46 transparent'
+                                }}
                             >
                                 {thoughtContent}
                             </div>
@@ -244,20 +268,25 @@ export const ChatNode: React.FC<ChatNodeProps> = ({
                 <div
                     ref={contentRef}
                     onMouseUp={handleMouseUp}
+                    onContextMenu={handleContextMenu}
                     className="text-[15px] leading-relaxed cursor-text selection:bg-blue-500/30 whitespace-normal font-medium markdown-container"
                 >
                     {renderContent()}
                 </div>
 
-                {selection && (
+                {contextMenu.show && (
                     <div
-                        className="absolute -top-12 left-1/2 -translate-x-1/2 flex items-center gap-2 animate-in fade-in zoom-in duration-200"
-                        style={{ zIndex: 50 }}
+                        className="fixed z-[1000] bg-zinc-900 border border-zinc-700 rounded-lg shadow-2xl py-1 min-w-[180px] animate-in fade-in zoom-in duration-150"
+                        style={{ top: contextMenu.y, left: contextMenu.x }}
+                        onClick={(e) => e.stopPropagation()}
                     >
                         <button
                             onClick={() => startFollowUp(true)}
-                            className="bg-blue-600 hover:bg-blue-500 text-white text-[11px] font-black uppercase tracking-tighter px-4 py-2 rounded-full shadow-[0_4px_20px_rgba(37,99,235,0.4)] transition-all hover:scale-105 active:scale-95"
+                            className="w-full text-left px-4 py-2 text-[12px] font-bold text-zinc-100 hover:bg-blue-600 transition-colors flex items-center gap-2"
                         >
+                            <svg className="w-3.5 h-3.5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                            </svg>
                             Branch from selection
                         </button>
                     </div>

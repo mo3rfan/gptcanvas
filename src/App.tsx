@@ -1,9 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { SettingsSidebar } from './components/SettingsSidebar';
 import { MindmapCanvas } from './components/MindmapCanvas';
 import type { ChatState, MessageNode, Settings } from './types';
 import { simulateStreaming, mockLLMResponse, fetchLLMResponse } from './utils';
 import { v4 as uuidv4 } from 'uuid';
+
+const STORAGE_KEY = 'gptcanvas_settings';
 
 const INITIAL_SETTINGS: Settings = {
   apiUrl: 'https://api.openai.com/v1',
@@ -12,14 +14,29 @@ const INITIAL_SETTINGS: Settings = {
 };
 
 function App() {
-  const [settings, setSettings] = useState<Settings>(INITIAL_SETTINGS);
-  const [state, setState] = useState<ChatState>({
+  const [settings, setSettings] = useState<Settings>(() => {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    return stored ? JSON.parse(stored) : INITIAL_SETTINGS;
+  });
+
+  const [state, setState] = useState<ChatState>(() => ({
     nodes: {},
     rootId: null,
-    selectedModel: INITIAL_SETTINGS.model,
-    apiUrl: INITIAL_SETTINGS.apiUrl,
-    apiKey: INITIAL_SETTINGS.apiKey,
-  });
+    selectedModel: settings.model,
+    apiUrl: settings.apiUrl,
+    apiKey: settings.apiKey,
+  }));
+
+  // Persist settings whenever they change
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+    setState(prev => ({
+      ...prev,
+      selectedModel: settings.model,
+      apiUrl: settings.apiUrl,
+      apiKey: settings.apiKey,
+    }));
+  }, [settings]);
 
 
   const updateNodeContent = (id: string, content: string) => {
@@ -186,7 +203,7 @@ function App() {
           </div>
         )}
         <div className="absolute bottom-4 left-4 text-[10px] text-zinc-700 font-mono pointer-events-none select-none">
-          v1.7.0 - THINKING_MODE_READY
+          v1.8.0 - PERSISTENCE_REFINED
         </div>
       </main>
     </div>
