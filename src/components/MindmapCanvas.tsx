@@ -44,6 +44,9 @@ function calculateLayout(
         const horizontalChildren = node.childrenIds.filter(id => !!nodes[id].isBranch);
         let branchStartY = currentY;
         for (const childId of horizontalChildren) {
+            const childNode = nodes[childId];
+            if (childNode.isCollapsed) continue; // Entire branch is hidden if collapsed
+
             const heightUsed = calculateLayout(childId, nodes, currentX + COLUMN_WIDTH, branchStartY, results);
             branchStartY += heightUsed + (NODE_SPACING * 2);
             if (branchStartY > maxChildY) maxChildY = branchStartY;

@@ -70,7 +70,7 @@ function App() {
       role: 'assistant',
       content: '', // Streaming starts later
       parentId: userId,
-      isBranch: !!highlightedText, // Inherit branch status
+      isBranch: false, // Responses stay in the same column as prompts
       childrenIds: [],
       isCollapsed: false,
     };
@@ -203,7 +203,7 @@ function App() {
           </div>
         )}
         <div className="absolute bottom-4 left-4 text-[10px] text-zinc-700 font-mono pointer-events-none select-none">
-          v1.8.3 - STABLE_SELECTION
+          v1.9.0 - DEEP_BRANCH_COLLAPSE
         </div>
       </main>
     </div>
