@@ -3,8 +3,9 @@ import type { MessageNode, ChatState } from '../types';
 import { ChatNode } from './ChatNode';
 
 const COLUMN_WIDTH = 650;
-const NODE_SPACING = 40;
-const NODE_HEIGHT_ESTIMATE = 200;
+const NODE_SPACING = 60;
+const NODE_HEIGHT_ESTIMATE = 180;
+const NODE_WIDTH = 550;
 
 /**
  * Recursively calculates coordinates for the tree.
@@ -122,16 +123,16 @@ export const MindmapCanvas: React.FC<CanvasProps> = ({ state, onBranch, onReply,
                         let d = "";
                         if (isHorizontal) {
                             // Curve from parent's right to child's left
-                            const startX = parentPos.x + 550; // Node width
-                            const startY = parentPos.y + 40;
+                            const startX = parentPos.x + NODE_WIDTH;
+                            const startY = parentPos.y + 50;
                             const endX = pos.x;
-                            const endY = pos.y + 40;
-                            d = `M ${startX} ${startY} C ${startX + 50} ${startY}, ${endX - 50} ${endY}, ${endX} ${endY}`;
+                            const endY = pos.y + 50;
+                            d = `M ${startX} ${startY} C ${startX + 30} ${startY}, ${endX - 30} ${endY}, ${endX} ${endY}`;
                         } else {
-                            // Straight line downwards
-                            const startX = parentPos.x + 100;
-                            const startY = parentPos.y + 150; // Node approximate bottom
-                            const endX = pos.x + 100;
+                            // Straight line downwards - from bottom center to top center
+                            const startX = parentPos.x + (NODE_WIDTH / 2);
+                            const startY = parentPos.y + NODE_HEIGHT_ESTIMATE;
+                            const endX = pos.x + (NODE_WIDTH / 2);
                             const endY = pos.y;
                             d = `M ${startX} ${startY} L ${endX} ${endY}`;
                         }
@@ -140,10 +141,9 @@ export const MindmapCanvas: React.FC<CanvasProps> = ({ state, onBranch, onReply,
                             <path
                                 key={`link-${childId}`}
                                 d={d}
-                                stroke={isHorizontal ? "rgba(59, 130, 246, 0.4)" : "rgba(39, 39, 42, 0.8)"}
-                                strokeWidth="2"
+                                stroke={isHorizontal ? "rgba(59, 130, 246, 0.7)" : "rgba(82, 82, 91, 0.8)"}
+                                strokeWidth="4"
                                 fill="none"
-                                strokeDasharray={isHorizontal ? "4 2" : "none"}
                             />
                         );
                     })}

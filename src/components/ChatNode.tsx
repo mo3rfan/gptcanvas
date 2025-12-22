@@ -103,7 +103,7 @@ export const ChatNode: React.FC<ChatNodeProps> = ({
     };
 
     return (
-        <div className="flex flex-col gap-2 min-w-[350px] max-w-[550px] group/node">
+        <div className="flex flex-col gap-2 w-[550px] group/node">
             <div
                 className={`p-5 rounded-xl shadow-2xl border-2 relative transition-all duration-300 ${node.role === 'user'
                     ? 'bg-blue-600/90 border-blue-400 text-white shadow-blue-900/20'
