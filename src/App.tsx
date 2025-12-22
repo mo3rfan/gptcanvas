@@ -169,7 +169,7 @@ function App() {
           </div>
         )}
         <div className="absolute bottom-4 left-4 text-[10px] text-zinc-700 font-mono pointer-events-none select-none">
-          v1.3.0 - RICH_RENDERING_READY
+          v1.3.1 - SCROLL_ZOOM_DEFAULT
         </div>
       </main>
     </div>

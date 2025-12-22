@@ -76,7 +76,8 @@ export const MindmapCanvas: React.FC<CanvasProps> = ({ state, onBranch, onReply,
     }
 
     const handleWheel = (e: React.WheelEvent) => {
-        if (e.ctrlKey) {
+        // Zoom by default, or pan if holding Ctrl (standard map behavior)
+        if (!e.ctrlKey) {
             const zoomSpeed = 0.001;
             setScale(s => Math.min(Math.max(s - e.deltaY * zoomSpeed, 0.1), 3));
         } else {
@@ -211,7 +212,7 @@ export const MindmapCanvas: React.FC<CanvasProps> = ({ state, onBranch, onReply,
             </div>
 
             <div className="absolute top-4 left-4 text-[10px] text-zinc-600 pointer-events-none uppercase font-black tracking-widest">
-                Ctrl + Scroll to Zoom | Left Click & Drag Background to Pan
+                Scroll to Zoom | Left Click & Drag Background to Pan
             </div>
         </div>
     );
