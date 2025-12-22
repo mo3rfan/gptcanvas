@@ -8,4 +8,5 @@ export default defineConfig({
     react(),
     tailwindcss(),
   ],
+  base: '/gptcanvas/', // GitHub Pages base path (repository name)
 })
