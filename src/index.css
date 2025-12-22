@@ -42,3 +42,10 @@ body {
 .selection\:bg-blue-300::selection {
     background-color: rgba(147, 197, 253, 0.3);
 }
+
+@media (max-width: 768px) {
+    .sidebar {
+        position: absolute;
+        z-index: 100;
+    }
+}

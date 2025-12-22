@@ -19,6 +19,8 @@ function App() {
     return stored ? JSON.parse(stored) : INITIAL_SETTINGS;
   });
 
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+
   const handleSettingsChange = (newSettings: Settings) => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(newSettings));
     setSettings(newSettings);
@@ -205,6 +207,8 @@ function App() {
         settings={settings}
         onSettingsChange={handleSettingsChange}
         tokenStats={state.tokenStats}
+        isOpen={isSidebarOpen}
+        onToggle={() => setIsSidebarOpen(!isSidebarOpen)}
       />
 
       <main className="flex-1 flex flex-col relative">
@@ -215,6 +219,7 @@ function App() {
           onToggleCollapse={handleToggleCollapse}
           onMoveNode={handleMoveNode}
           onUpdateHeight={handleUpdateHeight}
+          isSidebarOpen={isSidebarOpen}
         />
 
         {/* Initial Prompt Overlay if no root */}
@@ -252,7 +257,13 @@ function App() {
             </div>
           </div>
         )}
-        <div className="absolute bottom-4 left-4 text-[10px] text-zinc-700 font-mono pointer-events-none select-none">
+         <button
+            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+            className="absolute bottom-4 left-4 z-50 w-10 h-10 bg-zinc-900/50 backdrop-blur-sm border border-zinc-700 text-white rounded-lg hover:bg-zinc-800 transition-colors"
+            >
+            {isSidebarOpen ? '<' : '>'}
+        </button>
+        <div className="absolute bottom-1 right-4 text-[10px] text-zinc-700 font-mono pointer-events-none select-none">
           v2.1.0 - SCROLLABLE_RESPONSES
         </div>
       </main>

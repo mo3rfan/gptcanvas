@@ -65,11 +65,12 @@ interface CanvasProps {
     onToggleCollapse: (id: string) => void;
     onMoveNode: (id: string, x: number, y: number) => void;
     onUpdateHeight: (id: string, height: number) => void;
+    isSidebarOpen: boolean;
 }
 
-export const MindmapCanvas: React.FC<CanvasProps> = ({ state, onBranch, onReply, onToggleCollapse, onMoveNode, onUpdateHeight }) => {
+export const MindmapCanvas: React.FC<CanvasProps> = ({ state, onBranch, onReply, onToggleCollapse, onMoveNode, onUpdateHeight, isSidebarOpen }) => {
     const [scale, setScale] = useState(1);
-    const [offset, setOffset] = useState({ x: 100, y: 100 });
+    const [offset, setOffset] = useState({ x: (window.innerWidth / 2) - (NODE_WIDTH / 2), y: (window.innerHeight / 2) - (NODE_HEIGHT_ESTIMATE / 2) - 100 });
     const [isDragging, setIsDragging] = useState(false);
     const [draggedNodeId, setDraggedNodeId] = useState<string | null>(null);
     const [activeNodeId, setActiveNodeId] = useState<string | null>(null);
@@ -231,7 +232,7 @@ export const MindmapCanvas: React.FC<CanvasProps> = ({ state, onBranch, onReply,
                 >Reset View</button>
             </div>
 
-            <div className="absolute top-4 left-4 text-[10px] text-zinc-600 pointer-events-none uppercase font-black tracking-widest">
+            <div className={`absolute top-4 left-4 text-[10px] text-zinc-600 pointer-events-none uppercase font-black tracking-widest ${isSidebarOpen ? 'hidden' : ''}`}>
                 Scroll to Zoom | Left Click & Drag Background to Pan
             </div>
         </div>

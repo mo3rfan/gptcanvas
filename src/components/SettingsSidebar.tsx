@@ -4,16 +4,25 @@ interface SidebarProps {
     settings: Settings;
     onSettingsChange: (settings: Settings) => void;
     tokenStats: TokenStats;
+    isOpen: boolean;
+    onToggle: () => void;
 }
 
-export const SettingsSidebar: React.FC<SidebarProps> = ({ settings, onSettingsChange, tokenStats }) => {
+export const SettingsSidebar: React.FC<SidebarProps> = ({ settings, onSettingsChange, tokenStats, isOpen }) => {
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
         onSettingsChange({ ...settings, [name]: value });
     };
 
     return (
-        <div className="w-64 bg-zinc-900 border-r border-zinc-800 p-4 flex flex-col gap-4 text-zinc-200">
+        <div
+            className={`
+                absolute top-0 left-0 h-full z-50
+                sidebar w-64 bg-zinc-900 border-r border-zinc-800 p-4 flex flex-col gap-4 text-zinc-200
+                transition-transform duration-300 ease-in-out
+                ${isOpen ? 'translate-x-0' : '-translate-x-full'}
+            `}
+        >
             <h2 className="text-xl font-bold mb-2">LLM Settings</h2>
 
             <div className="flex flex-col gap-1">
@@ -74,7 +83,7 @@ export const SettingsSidebar: React.FC<SidebarProps> = ({ settings, onSettingsCh
                 </div>
             </div>
 
-            <div className="mt-auto text-[10px] text-zinc-600">
+            <div className="mt-auto pb-16 text-[10px] text-zinc-600">
                 Note: API settings will persist in local storage.
             </div>
         </div>
