@@ -1,12 +1,6 @@
 // src/utils.ts
 
-export const preprocessLatex = (content: string): string => {
-  const latexRegex = new RegExp('\\[([^\\[\\]]+)\\]', 'g');
-  return content.replace(latexRegex, (formula) => {
-    const cleanedFormula = formula.replace(/;=;/g, '=').replace(/,/g, ' ');
-    return `$$${cleanedFormula}$$`;
-  });
-};
+
 
 export const simulateStreaming = async (
   response: string,
@@ -23,7 +17,7 @@ export const mockLLMResponse = (prompt: string, context?: string | null): string
     if (context) {
         return `This is a mocked response based on the context: "${context}" and your question: "${prompt}". Highlighting text allows for more targeted follow-ups, enabling deeper exploration of specific concepts within the conversation flow. This branching creates a more organized and detailed mind map.`;
     }
-    return `This is a mocked response to your question: "${prompt}". The actual LLM API is not being called. To enable live API calls, remove the '?mock' parameter from the URL. Here's a code block:\n\n\`\`\`javascript\nconsole.log('Hello, world!');\n\`\`\`\n\nAnd here is the formula you mentioned: [ G_{\\mu\\nu} + \\Lambda,g_{\\mu\\nu} ;=; \\frac{8\\pi G}{c^4},T_{\\mu\\nu} ]\n\nAnd here is a list:\n- Item 1\n- Item 2\n- Item 3`;
+    return `This is a mocked response to your question: "${prompt}". The actual LLM API is not being called. To enable live API calls, remove the '?mock' parameter from the URL. Here's a code block:\n\n\`\`\`javascript\nconsole.log('Hello, world!');\n\`\`\`\n\nAnd here is the formula you mentioned: $$G_{\\mu\\nu} + \\Lambda g_{\\mu\\nu} = \\frac{8\\pi G}{c^4} T_{\\mu\\nu}$$\n\nAnd here is the quadratic formula: $$x=\\frac{-b\\pm\\sqrt{b^{2}-4ac}}{2a}$$\n\nAnd here is another formula: $$ax^{2}+bx+c=0 \\quad (a \\neq 0) $$\n\nAnd another one: $$\\boxed{x=\\frac{-b\\pm\\sqrt{b^{2}-4ac}}{2a}}$$`;
 };
 
 export const fetchLLMResponse = async (
@@ -42,7 +36,7 @@ export const fetchLLMResponse = async (
                 content: `You are a helpful assistant integrated into a mind-mapping application. 
                 Users can branch conversations from highlighted text.
                 When a user provides context from highlighted text, your response should focus on that context.
-                Format your responses using Markdown.`
+                Format your responses using Markdown. When you include mathematical formulas, always enclose them in double dollar signs ($$) for LaTeX rendering.`
             },
             {
                 role: 'user',

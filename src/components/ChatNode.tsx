@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import type { MessageNode } from '../types';
-import { preprocessLatex } from '../utils';
+
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
@@ -141,7 +141,7 @@ export const ChatNode: React.FC<ChatNodeProps> = ({
     };
 
     const memoizedContent = React.useMemo(() => {
-        let content = preprocessLatex(node.content);
+        let content = node.content;
         let thoughtContent = '';
 
         if (hasThinkTag) {
