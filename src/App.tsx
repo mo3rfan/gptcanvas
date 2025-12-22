@@ -107,6 +107,16 @@ function App() {
     }));
   };
 
+  const handleMoveNode = (id: string, x: number, y: number) => {
+    setState(prev => ({
+      ...prev,
+      nodes: {
+        ...prev.nodes,
+        [id]: { ...prev.nodes[id], position: { x, y } }
+      }
+    }));
+  };
+
   return (
     <div className="flex h-screen bg-zinc-950 text-zinc-100 font-sans">
       <SettingsSidebar
@@ -120,6 +130,7 @@ function App() {
           onBranch={handleBranch}
           onReply={handleReply}
           onToggleCollapse={handleToggleCollapse}
+          onMoveNode={handleMoveNode}
         />
 
         {/* Initial Prompt Overlay if no root */}
@@ -158,7 +169,7 @@ function App() {
           </div>
         )}
         <div className="absolute bottom-4 left-4 text-[10px] text-zinc-700 font-mono pointer-events-none select-none">
-          v1.1.0 - DYNAMIC_LAYERING_ACTIVE
+          v1.2.0 - REARRANGE_MODE_ACTIVATED
         </div>
       </main>
     </div>

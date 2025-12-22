@@ -8,6 +8,7 @@ interface ChatNodeProps {
     onReply: (parentId: string, prompt: string) => void;
     onToggleCollapse: (id: string) => void;
     onActive?: (id: string | null) => void;
+    onDragStart?: () => void;
 }
 
 export const ChatNode: React.FC<ChatNodeProps> = ({
@@ -17,6 +18,7 @@ export const ChatNode: React.FC<ChatNodeProps> = ({
     onReply,
     onToggleCollapse,
     onActive,
+    onDragStart,
 }) => {
     const [selection, setSelection] = useState<{ text: string; rect: DOMRect } | null>(null);
     const [showInput, setShowInput] = useState(false);
@@ -114,6 +116,20 @@ export const ChatNode: React.FC<ChatNodeProps> = ({
                     : 'bg-zinc-900 border-zinc-800 text-zinc-100 shadow-black/40'
                     }`}
             >
+                {/* Drag Handle */}
+                <div
+                    onMouseDown={(e) => {
+                        e.stopPropagation();
+                        onDragStart?.();
+                    }}
+                    className="absolute -top-3 -left-3 w-8 h-8 bg-zinc-800 border border-zinc-700 rounded-lg flex items-center justify-center cursor-grab active:cursor-grabbing opacity-0 group-hover/node:opacity-100 transition-opacity hover:bg-zinc-700 text-zinc-400 hover:text-white z-30"
+                    title="Drag to rearrange"
+                >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
+                    </svg>
+                </div>
+
                 {node.highlightedText && (
                     <div className="flex items-center gap-2 text-[10px] uppercase font-black text-zinc-500 mb-2 tracking-widest border-b border-zinc-800 pb-2">
                         <span className="bg-zinc-800 px-1.5 py-0.5 rounded text-zinc-400">Context</span>

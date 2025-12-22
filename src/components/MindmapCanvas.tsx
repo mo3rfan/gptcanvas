@@ -22,32 +22,35 @@ function calculateLayout(
     const node = nodes[nodeId];
     if (!node) return 0;
 
-    results[nodeId] = { x: startX, y: startY };
+    // Use manual override if it exists, otherwise use calculated position
+    const currentX = node.position?.x ?? startX;
+    const currentY = node.position?.y ?? startY;
+    results[nodeId] = { x: currentX, y: currentY };
 
-    let currentY = startY + NODE_HEIGHT_ESTIMATE + NODE_SPACING;
-    let maxChildY = currentY;
+    let pillarHeight = NODE_HEIGHT_ESTIMATE + NODE_SPACING;
+    let maxChildY = currentY + pillarHeight;
 
     if (!node.isCollapsed) {
-        // Vertical children (same pillar) - nodes that are NOT explicit branches
+        // Vertical children (same pillar)
         const verticalChildren = node.childrenIds.filter(id => !nodes[id].isBranch);
+        let nextVSpace = currentY + pillarHeight;
         for (const childId of verticalChildren) {
-            const heightUsed = calculateLayout(childId, nodes, startX, currentY, results);
-            currentY += heightUsed + NODE_SPACING;
-            if (currentY > maxChildY) maxChildY = currentY;
+            const heightUsed = calculateLayout(childId, nodes, currentX, nextVSpace, results);
+            nextVSpace += heightUsed + NODE_SPACING;
+            if (nextVSpace > maxChildY) maxChildY = nextVSpace;
         }
 
-        // Horizontal branches (new column to the right) - nodes that ARE explicit branches
+        // Horizontal branches (new column to the right)
         const horizontalChildren = node.childrenIds.filter(id => !!nodes[id].isBranch);
-        let branchStartY = startY;
+        let branchStartY = currentY;
         for (const childId of horizontalChildren) {
-            // New Pillar starts at current startX + offset
-            const heightUsed = calculateLayout(childId, nodes, startX + COLUMN_WIDTH, branchStartY, results);
+            const heightUsed = calculateLayout(childId, nodes, currentX + COLUMN_WIDTH, branchStartY, results);
             branchStartY += heightUsed + (NODE_SPACING * 2);
             if (branchStartY > maxChildY) maxChildY = branchStartY;
         }
     }
 
-    return Math.max(maxChildY - startY, NODE_HEIGHT_ESTIMATE);
+    return Math.max(maxChildY - currentY, NODE_HEIGHT_ESTIMATE);
 }
 
 interface CanvasProps {
@@ -55,12 +58,14 @@ interface CanvasProps {
     onBranch: (parentId: string, highlightedText: string, prompt: string) => void;
     onReply: (parentId: string, prompt: string) => void;
     onToggleCollapse: (id: string) => void;
+    onMoveNode: (id: string, x: number, y: number) => void;
 }
 
-export const MindmapCanvas: React.FC<CanvasProps> = ({ state, onBranch, onReply, onToggleCollapse }) => {
+export const MindmapCanvas: React.FC<CanvasProps> = ({ state, onBranch, onReply, onToggleCollapse, onMoveNode }) => {
     const [scale, setScale] = useState(1);
     const [offset, setOffset] = useState({ x: 100, y: 100 });
     const [isDragging, setIsDragging] = useState(false);
+    const [draggedNodeId, setDraggedNodeId] = useState<string | null>(null);
     const [activeNodeId, setActiveNodeId] = useState<string | null>(null);
     const canvasRef = useRef<HTMLDivElement>(null);
 
@@ -89,10 +94,19 @@ export const MindmapCanvas: React.FC<CanvasProps> = ({ state, onBranch, onReply,
     const handleMouseMove = (e: React.MouseEvent) => {
         if (isDragging) {
             setOffset(o => ({ x: o.x + e.movementX, y: o.y + e.movementY }));
+        } else if (draggedNodeId) {
+            // Adjust movement by scale to keep node under cursor
+            onMoveNode(draggedNodeId,
+                (state.nodes[draggedNodeId].position?.x ?? layout[draggedNodeId].x) + e.movementX / scale,
+                (state.nodes[draggedNodeId].position?.y ?? layout[draggedNodeId].y) + e.movementY / scale
+            );
         }
     };
 
-    const handleMouseUp = () => setIsDragging(false);
+    const handleMouseUp = () => {
+        setIsDragging(false);
+        setDraggedNodeId(null);
+    };
 
     return (
         <div
@@ -173,6 +187,7 @@ export const MindmapCanvas: React.FC<CanvasProps> = ({ state, onBranch, onReply,
                                 onReply={onReply}
                                 onToggleCollapse={onToggleCollapse}
                                 onActive={setActiveNodeId}
+                                onDragStart={() => setDraggedNodeId(id)}
                             />
                         </div>
                     );

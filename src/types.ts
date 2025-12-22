@@ -9,6 +9,7 @@ export interface MessageNode {
     isBranch?: boolean;
     childrenIds: string[];
     isCollapsed: boolean;
+    position?: { x: number; y: number };
 }
 
 export interface ChatState {
