@@ -1,4 +1,4 @@
-import React, { useState, useRef, type ReactNode } from 'react';
+import React, { useState, useRef, useEffect, type ReactNode } from 'react';
 import type { MessageNode } from '../types';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -32,7 +32,28 @@ export const ChatNode: React.FC<ChatNodeProps> = ({
     const [isBranching, setIsBranching] = useState(false);
     const [branchText, setBranchText] = useState<string | null>(null);
     const [input, setInput] = useState('');
+    const [isThinkingExpanded, setIsThinkingExpanded] = useState(false);
     const contentRef = useRef<HTMLDivElement>(null);
+    const thinkingRef = useRef<HTMLDivElement>(null);
+
+    const hasThinkTag = node.content.includes('<think>');
+    const isThinkingDone = node.content.includes('</think>');
+
+    // Auto-scroll thinking box while streaming
+    useEffect(() => {
+        if (!isThinkingDone && thinkingRef.current) {
+            thinkingRef.current.scrollTop = thinkingRef.current.scrollHeight;
+        }
+    }, [node.content, isThinkingDone]);
+
+    // Auto-collapse when done
+    useEffect(() => {
+        if (isThinkingDone) {
+            setIsThinkingExpanded(false);
+        } else if (hasThinkTag) {
+            setIsThinkingExpanded(true);
+        }
+    }, [isThinkingDone, hasThinkTag]);
 
     const handleMouseUp = () => {
         const sel = window.getSelection();
@@ -71,82 +92,123 @@ export const ChatNode: React.FC<ChatNodeProps> = ({
     };
 
     const renderContent = () => {
+        let content = node.content;
+        let thoughtContent = '';
+
+        if (hasThinkTag) {
+            const parts = content.split('</think>');
+            if (parts.length > 1) {
+                thoughtContent = parts[0].replace('<think>', '').trim();
+                content = parts.slice(1).join('</think>').trim();
+            } else {
+                thoughtContent = content.replace('<think>', '').trim();
+                content = '';
+            }
+        }
+
         return (
-            <ReactMarkdown
-                remarkPlugins={[remarkGfm, remarkMath]}
-                rehypePlugins={[rehypeKatex]}
-                components={{
-                    code({ node, inline, className, children, ...props }: any) {
-                        const match = /language-(\w+)/.exec(className || '');
-                        return !inline && match ? (
-                            <div className="my-4 rounded-lg overflow-hidden border border-zinc-700 shadow-2xl">
-                                <div className="bg-zinc-800 px-4 py-1.5 text-[10px] font-black uppercase tracking-widest text-zinc-400 flex justify-between items-center border-b border-zinc-700">
-                                    <span>{match[1]}</span>
-                                    <span className="opacity-50">Code Snippet</span>
-                                </div>
-                                <SyntaxHighlighter
-                                    {...props}
-                                    style={vscDarkPlus}
-                                    language={match[1]}
-                                    PreTag="div"
-                                    customStyle={{ margin: 0, padding: '1rem', background: '#09090b', fontSize: '13px' }}
-                                >
-                                    {String(children).replace(/\n$/, '')}
-                                </SyntaxHighlighter>
+            <>
+                {hasThinkTag && (
+                    <div className="mb-4 border border-zinc-700/50 rounded-lg overflow-hidden bg-zinc-950/50">
+                        <button
+                            onClick={() => setIsThinkingExpanded(!isThinkingExpanded)}
+                            className="w-full flex items-center justify-between px-3 py-2 text-[10px] font-black uppercase tracking-widest text-zinc-500 hover:text-zinc-300 transition-colors bg-zinc-900/30 border-b border-zinc-800/50"
+                        >
+                            <span className="flex items-center gap-2">
+                                <div className={`w-1.5 h-1.5 rounded-full ${isThinkingDone ? 'bg-zinc-600' : 'bg-blue-500 animate-pulse'}`} />
+                                {isThinkingDone ? "Thought Process" : "Thinking..."}
+                            </span>
+                            <span className="opacity-50">{isThinkingExpanded ? "Collapse" : "Expand"}</span>
+                        </button>
+
+                        {(isThinkingExpanded || !isThinkingDone) && (
+                            <div
+                                ref={thinkingRef}
+                                className={`p-4 text-[13px] font-mono leading-relaxed text-zinc-400 overflow-y-auto transition-all duration-300 ease-in-out ${isThinkingExpanded ? 'max-h-[300px]' : 'max-h-[100px]'
+                                    }`}
+                            >
+                                {thoughtContent}
                             </div>
-                        ) : (
-                            <code className={`${className} bg-zinc-800 px-1.5 py-0.5 rounded text-blue-300 font-mono text-[13px] border border-zinc-700`} {...props}>
-                                {children}
-                            </code>
-                        );
-                    },
-                    text({ children }: any) {
-                        if (typeof children !== 'string') return children;
+                        )}
+                    </div>
+                )}
 
-                        const parts: (string | ReactNode)[] = [children];
-                        const sortedBranches = [...branchChildren].sort((a, b) => (b.highlightedText?.length || 0) - (a.highlightedText?.length || 0));
+                <ReactMarkdown
+                    remarkPlugins={[remarkGfm, remarkMath]}
+                    rehypePlugins={[rehypeKatex]}
+                    components={{
+                        code({ node, inline, className, children, ...props }: any) {
+                            const match = /language-(\w+)/.exec(className || '');
+                            return !inline && match ? (
+                                <div className="my-4 rounded-lg overflow-hidden border border-zinc-700 shadow-2xl">
+                                    <div className="bg-zinc-800 px-4 py-1.5 text-[10px] font-black uppercase tracking-widest text-zinc-400 flex justify-between items-center border-b border-zinc-700">
+                                        <span>{match[1]}</span>
+                                        <span className="opacity-50">Code Snippet</span>
+                                    </div>
+                                    <SyntaxHighlighter
+                                        {...props}
+                                        style={vscDarkPlus}
+                                        language={match[1]}
+                                        PreTag="div"
+                                        customStyle={{ margin: 0, padding: '1rem', background: '#09090b', fontSize: '13px' }}
+                                    >
+                                        {String(children).replace(/\n$/, '')}
+                                    </SyntaxHighlighter>
+                                </div>
+                            ) : (
+                                <code className={`${className} bg-zinc-800 px-1.5 py-0.5 rounded text-blue-300 font-mono text-[13px] border border-zinc-700`} {...props}>
+                                    {children}
+                                </code>
+                            );
+                        },
+                        text({ children }: any) {
+                            if (typeof children !== 'string') return children;
 
-                        sortedBranches.forEach(branch => {
-                            if (!branch.highlightedText) return;
+                            const parts: (string | ReactNode)[] = [children];
+                            const sortedBranches = [...branchChildren].sort((a, b) => (b.highlightedText?.length || 0) - (a.highlightedText?.length || 0));
 
-                            for (let i = 0; i < parts.length; i++) {
-                                const part = parts[i];
-                                if (typeof part !== 'string') continue;
+                            sortedBranches.forEach(branch => {
+                                if (!branch.highlightedText) return;
 
-                                const index = part.toLowerCase().indexOf(branch.highlightedText.toLowerCase());
-                                if (index !== -1) {
-                                    const before = part.slice(0, index);
-                                    const matchText = part.slice(index, index + branch.highlightedText.length);
-                                    const after = part.slice(index + branch.highlightedText.length);
+                                for (let i = 0; i < parts.length; i++) {
+                                    const part = parts[i];
+                                    if (typeof part !== 'string') continue;
 
-                                    parts.splice(i, 1,
-                                        before,
-                                        <button
-                                            key={branch.id}
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                onToggleCollapse(branch.id);
-                                            }}
-                                            className={`px-1 rounded transition-all inline-block leading-relaxed cursor-pointer font-bold ${branch.isCollapsed
-                                                ? 'bg-zinc-700/30 hover:bg-zinc-600/50 text-zinc-500 border border-zinc-700/50'
-                                                : 'bg-blue-900/40 hover:bg-blue-800/60 text-blue-300 border border-blue-500/30 shadow-[0_0_10px_rgba(59,130,246,0.1)]'
-                                                }`}
-                                            title={branch.isCollapsed ? "Expand branch" : "Collapse branch"}
-                                        >
-                                            {matchText}
-                                        </button>,
-                                        after
-                                    );
-                                    break;
+                                    const index = part.toLowerCase().indexOf(branch.highlightedText.toLowerCase());
+                                    if (index !== -1) {
+                                        const before = part.slice(0, index);
+                                        const matchText = part.slice(index, index + branch.highlightedText.length);
+                                        const after = part.slice(index + branch.highlightedText.length);
+
+                                        parts.splice(i, 1,
+                                            before,
+                                            <button
+                                                key={branch.id}
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    onToggleCollapse(branch.id);
+                                                }}
+                                                className={`px-1 rounded transition-all inline-block leading-relaxed cursor-pointer font-bold ${branch.isCollapsed
+                                                    ? 'bg-zinc-700/30 hover:bg-zinc-600/50 text-zinc-500 border border-zinc-700/50'
+                                                    : 'bg-blue-900/40 hover:bg-blue-800/60 text-blue-300 border border-blue-500/30 shadow-[0_0_10px_rgba(59,130,246,0.1)]'
+                                                    }`}
+                                                title={branch.isCollapsed ? "Expand branch" : "Collapse branch"}
+                                            >
+                                                {matchText}
+                                            </button>,
+                                            after
+                                        );
+                                        break;
+                                    }
                                 }
-                            }
-                        });
-                        return <>{parts}</>;
-                    }
-                }}
-            >
-                {node.content}
-            </ReactMarkdown>
+                            });
+                            return <>{parts}</>;
+                        }
+                    }}
+                >
+                    {content}
+                </ReactMarkdown>
+            </>
         );
     };
 

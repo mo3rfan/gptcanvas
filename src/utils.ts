@@ -12,7 +12,14 @@ export const simulateStreaming = async (
 
 export const mockLLMResponse = (prompt: string, context?: string): string => {
     if (context) {
-        return `### Follow-up on: *"${context}"*
+        return `<think>
+The user is asking a follow-up about "${prompt}" in the context of "${context}".
+I should provide a technical deep-dive into the mathematical and programmatic aspects.
+Calculating relationship...
+Optimizing response structure...
+</think>
+
+### Follow-up on: *"${context}"*
 
 Here is a technical detail related to **${prompt}**:
 
@@ -30,7 +37,14 @@ $$F = G \\frac{m_1 m_2}{r^2}$$
 
 This demonstrates how the branched context relates to the core logic.`;
     }
-    return `### Hello! This is a rich response to: **"${prompt}"**
+    return `<think>
+Processing request for: "${prompt}"
+Analyzing GPTCanvas core architecture v1.7.0...
+Generating rich content response with Markdown and LaTeX...
+Complete.
+</think>
+
+### Hello! This is a rich response to: **"${prompt}"**
 
 You can write complex math like the **Quadratic Formula**:
 $$x = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}$$
@@ -38,10 +52,10 @@ $$x = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}$$
 And snippets of code:
 \`\`\`javascript
 const gptCanvas = {
-  version: "1.3.0",
-  features: ["Markdown", "LaTeX", "Highlighter"]
+  version: "1.7.0",
+  features: ["Markdown", "LaTeX", "ThinkingMode"]
 };
-console.log("Ready for rich content!");
+console.log("Thinking mode active!");
 \`\`\`
 
 Highlight any text to start a branch!`;
