@@ -169,7 +169,7 @@ function App() {
           </div>
         )}
         <div className="absolute bottom-4 left-4 text-[10px] text-zinc-700 font-mono pointer-events-none select-none">
-          v1.2.0 - REARRANGE_MODE_ACTIVATED
+          v1.2.1 - REPOSITORY_HISTORY_REFINED
         </div>
       </main>
     </div>
