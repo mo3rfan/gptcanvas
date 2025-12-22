@@ -65,15 +65,35 @@ export const fetchLLMResponse = async (
 
     messages.push({ role: "user", content: prompt });
 
+    const isAzure = apiUrl.includes("azure.com");
+    let finalUrl = apiUrl;
+    const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+    };
+
+    if (isAzure) {
+        headers["api-key"] = apiKey;
+        // Azure AI Inference often needs /chat/completions but sometimes the user provides the full base
+        if (!finalUrl.includes("/chat/completions")) {
+            finalUrl = `${finalUrl.replace(/\/$/, "")}/chat/completions`;
+        }
+        // Append api-version if not present
+        if (!finalUrl.includes("api-version=")) {
+            finalUrl += (finalUrl.includes("?") ? "&" : "?") + "api-version=2024-05-01-preview";
+        }
+    } else {
+        headers["Authorization"] = `Bearer ${apiKey}`;
+        headers["HTTP-Referer"] = "https://gptcanvas.local"; // Required by OpenRouter
+        headers["X-Title"] = "GPTCanvas"; // Required by OpenRouter
+        if (!finalUrl.includes("/chat/completions")) {
+            finalUrl = `${finalUrl.replace(/\/$/, "")}/chat/completions`;
+        }
+    }
+
     try {
-        const response = await fetch(`${apiUrl}/chat/completions`, {
+        const response = await fetch(finalUrl, {
             method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${apiKey}`,
-                "HTTP-Referer": "https://gptcanvas.local", // Required by OpenRouter
-                "X-Title": "GPTCanvas", // Required by OpenRouter
-            },
+            headers,
             body: JSON.stringify({
                 model,
                 messages,
@@ -98,8 +118,8 @@ export const fetchLLMResponse = async (
             const lines = chunk.split("\n");
 
             for (const line of lines) {
-                if (line.startsWith("data: ")) {
-                    const data = line.slice(6);
+                if (line.trim().startsWith("data: ")) {
+                    const data = line.trim().slice(6);
                     if (data === "[DONE]") break;
                     try {
                         const json = JSON.parse(data);

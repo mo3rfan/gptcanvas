@@ -186,7 +186,7 @@ function App() {
           </div>
         )}
         <div className="absolute bottom-4 left-4 text-[10px] text-zinc-700 font-mono pointer-events-none select-none">
-          v1.5.0 - OPENROUTER_READY
+          v1.6.0 - AZURE_INFERENCE_ENABLED
         </div>
       </main>
     </div>
