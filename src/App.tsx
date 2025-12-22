@@ -95,9 +95,10 @@ function App() {
       await fetchLLMResponse(
         settings.apiUrl,
         settings.apiKey,
+        settings.model,
         prompt,
         highlightedText || null,
-        (token) => {
+        (token: string) => {
           fullContent += token;
           updateNodeContent(assistantId, fullContent);
         }
@@ -185,7 +186,7 @@ function App() {
           </div>
         )}
         <div className="absolute bottom-4 left-4 text-[10px] text-zinc-700 font-mono pointer-events-none select-none">
-          v1.4.0 - LIVE_API_CONNECTED
+          v1.5.0 - OPENROUTER_READY
         </div>
       </main>
     </div>

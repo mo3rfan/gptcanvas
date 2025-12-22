@@ -49,6 +49,7 @@ Highlight any text to start a branch!`;
 export const fetchLLMResponse = async (
     apiUrl: string,
     apiKey: string,
+    model: string,
     prompt: string,
     context: string | null,
     onToken: (token: string) => void
@@ -70,9 +71,11 @@ export const fetchLLMResponse = async (
             headers: {
                 "Content-Type": "application/json",
                 "Authorization": `Bearer ${apiKey}`,
+                "HTTP-Referer": "https://gptcanvas.local", // Required by OpenRouter
+                "X-Title": "GPTCanvas", // Required by OpenRouter
             },
             body: JSON.stringify({
-                model: "gpt-3.5-turbo", // Default or user choice
+                model,
                 messages,
                 stream: true,
             }),
