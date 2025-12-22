@@ -1,0 +1,24 @@
+@import "tailwindcss";
+
+@theme {
+    --animate-draw: draw 0.5s ease-out forwards;
+
+    @keyframes draw {
+        from {
+            stroke-dasharray: 100;
+            stroke-dashoffset: 100;
+        }
+
+        to {
+            stroke-dashoffset: 0;
+        }
+    }
+}
+
+body {
+    overflow: hidden;
+}
+
+.selection\:bg-blue-300::selection {
+    background-color: rgba(147, 197, 253, 0.3);
+}
