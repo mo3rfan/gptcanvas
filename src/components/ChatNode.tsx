@@ -112,7 +112,7 @@ export const ChatNode: React.FC<ChatNodeProps> = ({
         onActive?.(null);
     };
 
-    const renderContent = () => {
+    const memoizedContent = React.useMemo(() => {
         let content = node.content;
         let thoughtContent = '';
 
@@ -126,6 +126,58 @@ export const ChatNode: React.FC<ChatNodeProps> = ({
                 content = '';
             }
         }
+
+        const handleTextHighlights = (children: any): any => {
+            if (typeof children === 'string') {
+                let parts: (string | React.ReactNode)[] = [children];
+                const sortedBranches = [...branchChildren].sort((a, b) => (b.highlightedText?.length || 0) - (a.highlightedText?.length || 0));
+
+                sortedBranches.forEach(branch => {
+                    if (!branch.highlightedText) return;
+
+                    for (let i = 0; i < parts.length; i++) {
+                        const part = parts[i];
+                        if (typeof part !== 'string') continue;
+
+                        const index = part.toLowerCase().indexOf(branch.highlightedText.toLowerCase());
+                        if (index !== -1) {
+                            const before = part.slice(0, index);
+                            const matchText = part.slice(index, index + branch.highlightedText.length);
+                            const after = part.slice(index + branch.highlightedText.length);
+
+                            parts.splice(i, 1,
+                                before,
+                                <button
+                                    key={branch.id}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        onToggleCollapse(branch.id);
+                                    }}
+                                    className={`px-1 rounded transition-all inline-block leading-relaxed cursor-pointer font-bold ${branch.isCollapsed
+                                        ? 'bg-zinc-700/30 hover:bg-zinc-600/50 text-zinc-500 border border-zinc-700/50'
+                                        : 'bg-blue-900/40 hover:bg-blue-800/60 text-blue-300 border border-blue-500/30 shadow-[0_0_10px_rgba(59,130,246,0.1)]'
+                                        }`}
+                                    title={branch.isCollapsed ? "Expand branch" : "Collapse branch"}
+                                >
+                                    {matchText}
+                                </button>,
+                                after
+                            );
+                            break;
+                        }
+                    }
+                });
+                return parts;
+            }
+            if (Array.isArray(children)) {
+                return children.map((child, idx) => (
+                    <React.Fragment key={idx}>
+                        {handleTextHighlights(child)}
+                    </React.Fragment>
+                ));
+            }
+            return children;
+        };
 
         return (
             <>
@@ -182,60 +234,25 @@ export const ChatNode: React.FC<ChatNodeProps> = ({
                                 </div>
                             ) : (
                                 <code className={`${className} bg-zinc-800 px-1.5 py-0.5 rounded text-blue-300 font-mono text-[13px] border border-zinc-700`} {...props}>
-                                    {children}
+                                    {handleTextHighlights(children)}
                                 </code>
                             );
                         },
-                        text({ children }: any) {
-                            if (typeof children !== 'string') return children;
-
-                            const parts: (string | ReactNode)[] = [children];
-                            const sortedBranches = [...branchChildren].sort((a, b) => (b.highlightedText?.length || 0) - (a.highlightedText?.length || 0));
-
-                            sortedBranches.forEach(branch => {
-                                if (!branch.highlightedText) return;
-
-                                for (let i = 0; i < parts.length; i++) {
-                                    const part = parts[i];
-                                    if (typeof part !== 'string') continue;
-
-                                    const index = part.toLowerCase().indexOf(branch.highlightedText.toLowerCase());
-                                    if (index !== -1) {
-                                        const before = part.slice(0, index);
-                                        const matchText = part.slice(index, index + branch.highlightedText.length);
-                                        const after = part.slice(index + branch.highlightedText.length);
-
-                                        parts.splice(i, 1,
-                                            before,
-                                            <button
-                                                key={branch.id}
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    onToggleCollapse(branch.id);
-                                                }}
-                                                className={`px-1 rounded transition-all inline-block leading-relaxed cursor-pointer font-bold ${branch.isCollapsed
-                                                    ? 'bg-zinc-700/30 hover:bg-zinc-600/50 text-zinc-500 border border-zinc-700/50'
-                                                    : 'bg-blue-900/40 hover:bg-blue-800/60 text-blue-300 border border-blue-500/30 shadow-[0_0_10px_rgba(59,130,246,0.1)]'
-                                                    }`}
-                                                title={branch.isCollapsed ? "Expand branch" : "Collapse branch"}
-                                            >
-                                                {matchText}
-                                            </button>,
-                                            after
-                                        );
-                                        break;
-                                    }
-                                }
-                            });
-                            return <>{parts}</>;
-                        }
+                        p: ({ children }: any) => <p className="mb-4 last:mb-0">{handleTextHighlights(children)}</p>,
+                        li: ({ children }: any) => <li className="mb-1">{handleTextHighlights(children)}</li>,
+                        h1: ({ children }: any) => <h1 className="text-2xl font-bold mb-4">{handleTextHighlights(children)}</h1>,
+                        h2: ({ children }: any) => <h2 className="text-xl font-bold mb-3">{handleTextHighlights(children)}</h2>,
+                        h3: ({ children }: any) => <h3 className="text-lg font-bold mb-2">{handleTextHighlights(children)}</h3>,
+                        h4: ({ children }: any) => <h4 className="text-base font-bold mb-2">{handleTextHighlights(children)}</h4>,
+                        h5: ({ children }: any) => <h5 className="text-sm font-bold mb-1">{handleTextHighlights(children)}</h5>,
+                        h6: ({ children }: any) => <h6 className="text-xs font-bold mb-1">{handleTextHighlights(children)}</h6>,
                     }}
                 >
                     {content}
                 </ReactMarkdown>
             </>
         );
-    };
+    }, [node.content, branchChildren, isThinkingExpanded, isThinkingDone, hasThinkTag, onToggleCollapse]);
 
     return (
         <div className="flex flex-col gap-2 w-[550px] group/node">
@@ -272,7 +289,7 @@ export const ChatNode: React.FC<ChatNodeProps> = ({
                     onContextMenu={handleContextMenu}
                     className="text-[15px] leading-relaxed cursor-text selection:bg-blue-500/30 whitespace-normal font-medium markdown-container"
                 >
-                    {renderContent()}
+                    {memoizedContent}
                 </div>
 
                 {contextMenu.show && createPortal(
