@@ -9,6 +9,7 @@ export interface MessageNode {
     isBranch?: boolean;
     childrenIds: string[];
     isCollapsed: boolean;
+    height?: number;
     position?: { x: number; y: number };
 }
 

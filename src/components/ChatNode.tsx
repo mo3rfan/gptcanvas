@@ -17,6 +17,7 @@ interface ChatNodeProps {
     onToggleCollapse: (id: string) => void;
     onActive?: (id: string | null) => void;
     onDragStart?: () => void;
+    onUpdateHeight?: (id: string, height: number) => void;
 }
 
 export const ChatNode: React.FC<ChatNodeProps> = ({
@@ -27,6 +28,7 @@ export const ChatNode: React.FC<ChatNodeProps> = ({
     onToggleCollapse,
     onActive,
     onDragStart,
+    onUpdateHeight,
 }) => {
     const [selection, setSelection] = useState<{ text: string; rect: DOMRect } | null>(null);
     const [showInput, setShowInput] = useState(false);
@@ -36,7 +38,25 @@ export const ChatNode: React.FC<ChatNodeProps> = ({
     const [isThinkingExpanded, setIsThinkingExpanded] = useState(false);
     const [contextMenu, setContextMenu] = useState<{ x: number, y: number, show: boolean }>({ x: 0, y: 0, show: false });
     const contentRef = useRef<HTMLDivElement>(null);
+    const containerRef = useRef<HTMLDivElement>(null);
     const thinkingRef = useRef<HTMLDivElement>(null);
+
+    // Track actual height for mindmap layout
+    useEffect(() => {
+        if (!onUpdateHeight || !containerRef.current) return;
+
+        const observer = new ResizeObserver((entries) => {
+            for (const entry of entries) {
+                const height = Math.ceil(entry.contentRect.height + 40); // 40 for padding/border estimate if needed, or entry.borderBoxSize
+                // Use borderBoxSize if available for better accuracy
+                const borderBoxHeight = entry.borderBoxSize?.[0]?.blockSize ?? height;
+                onUpdateHeight(node.id, Math.ceil(borderBoxHeight));
+            }
+        });
+
+        observer.observe(containerRef.current);
+        return () => observer.disconnect();
+    }, [node.id, onUpdateHeight]);
 
     const hasThinkTag = node.content.includes('<think>');
     const isThinkingDone = node.content.includes('</think>');
@@ -257,6 +277,7 @@ export const ChatNode: React.FC<ChatNodeProps> = ({
     return (
         <div className="flex flex-col gap-2 w-[550px] group/node">
             <div
+                ref={containerRef}
                 className={`p-5 rounded-xl shadow-2xl border-2 relative transition-all duration-300 w-full min-h-[150px] flex flex-col ${node.role === 'user'
                     ? 'bg-blue-600/90 border-blue-400 text-white shadow-blue-900/20'
                     : 'bg-zinc-900 border-zinc-800 text-zinc-100 shadow-black/40'

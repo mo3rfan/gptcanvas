@@ -27,13 +27,15 @@ function calculateLayout(
     const currentY = node.position?.y ?? startY;
     results[nodeId] = { x: currentX, y: currentY };
 
-    let pillarHeight = NODE_HEIGHT_ESTIMATE + NODE_SPACING;
-    let maxChildY = currentY + pillarHeight;
+    // Use reported height or estimate
+    const actualHeight = node.height || NODE_HEIGHT_ESTIMATE;
+    let totalBlockHeight = actualHeight + NODE_SPACING;
+    let maxChildY = currentY + totalBlockHeight;
 
     if (!node.isCollapsed) {
         // Vertical children (same pillar)
         const verticalChildren = node.childrenIds.filter(id => !nodes[id].isBranch);
-        let nextVSpace = currentY + pillarHeight;
+        let nextVSpace = currentY + totalBlockHeight;
         for (const childId of verticalChildren) {
             const heightUsed = calculateLayout(childId, nodes, currentX, nextVSpace, results);
             nextVSpace += heightUsed + NODE_SPACING;
@@ -53,7 +55,7 @@ function calculateLayout(
         }
     }
 
-    return Math.max(maxChildY - currentY, NODE_HEIGHT_ESTIMATE);
+    return Math.max(maxChildY - currentY, actualHeight);
 }
 
 interface CanvasProps {
@@ -62,9 +64,10 @@ interface CanvasProps {
     onReply: (parentId: string, prompt: string) => void;
     onToggleCollapse: (id: string) => void;
     onMoveNode: (id: string, x: number, y: number) => void;
+    onUpdateHeight: (id: string, height: number) => void;
 }
 
-export const MindmapCanvas: React.FC<CanvasProps> = ({ state, onBranch, onReply, onToggleCollapse, onMoveNode }) => {
+export const MindmapCanvas: React.FC<CanvasProps> = ({ state, onBranch, onReply, onToggleCollapse, onMoveNode, onUpdateHeight }) => {
     const [scale, setScale] = useState(1);
     const [offset, setOffset] = useState({ x: 100, y: 100 });
     const [isDragging, setIsDragging] = useState(false);
@@ -192,6 +195,7 @@ export const MindmapCanvas: React.FC<CanvasProps> = ({ state, onBranch, onReply,
                                 onToggleCollapse={onToggleCollapse}
                                 onActive={setActiveNodeId}
                                 onDragStart={() => setDraggedNodeId(id)}
+                                onUpdateHeight={onUpdateHeight}
                             />
                         </div>
                     );

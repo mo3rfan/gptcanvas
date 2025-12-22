@@ -151,6 +151,19 @@ function App() {
     }));
   };
 
+  const handleUpdateHeight = (id: string, height: number) => {
+    setState(prev => {
+      if (prev.nodes[id]?.height === height) return prev;
+      return {
+        ...prev,
+        nodes: {
+          ...prev.nodes,
+          [id]: { ...prev.nodes[id], height }
+        }
+      };
+    });
+  };
+
   return (
     <div className="flex h-screen bg-zinc-950 text-zinc-100 font-sans">
       <SettingsSidebar
@@ -165,6 +178,7 @@ function App() {
           onReply={handleReply}
           onToggleCollapse={handleToggleCollapse}
           onMoveNode={handleMoveNode}
+          onUpdateHeight={handleUpdateHeight}
         />
 
         {/* Initial Prompt Overlay if no root */}
@@ -203,7 +217,7 @@ function App() {
           </div>
         )}
         <div className="absolute bottom-4 left-4 text-[10px] text-zinc-700 font-mono pointer-events-none select-none">
-          v1.9.0 - DEEP_BRANCH_COLLAPSE
+          v1.9.1 - DYNAMIC_LAYOUT
         </div>
       </main>
     </div>
