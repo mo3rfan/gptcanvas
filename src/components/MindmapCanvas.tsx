@@ -4,7 +4,7 @@ import { ChatNode } from './ChatNode';
 
 const COLUMN_WIDTH = 650;
 const NODE_SPACING = 60;
-const NODE_HEIGHT_ESTIMATE = 180;
+const NODE_HEIGHT_ESTIMATE = 150;
 const NODE_WIDTH = 550;
 
 /**
