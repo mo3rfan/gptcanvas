@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import type { MessageNode } from '../types';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -274,11 +275,12 @@ export const ChatNode: React.FC<ChatNodeProps> = ({
                     {renderContent()}
                 </div>
 
-                {contextMenu.show && (
+                {contextMenu.show && createPortal(
                     <div
                         className="fixed z-[1000] bg-zinc-900 border border-zinc-700 rounded-lg shadow-2xl py-1 min-w-[180px] animate-in fade-in zoom-in duration-150"
                         style={{ top: contextMenu.y, left: contextMenu.x }}
                         onClick={(e) => e.stopPropagation()}
+                        onContextMenu={(e) => e.preventDefault()}
                     >
                         <button
                             onClick={() => startFollowUp(true)}
@@ -289,7 +291,8 @@ export const ChatNode: React.FC<ChatNodeProps> = ({
                             </svg>
                             Branch from selection
                         </button>
-                    </div>
+                    </div>,
+                    document.body
                 )}
 
                 <div className="absolute -bottom-8 right-0 flex gap-4 opacity-0 group-hover/node:opacity-100 transition-opacity">
