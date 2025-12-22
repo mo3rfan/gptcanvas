@@ -61,6 +61,7 @@ export const MindmapCanvas: React.FC<CanvasProps> = ({ state, onBranch, onReply,
     const [scale, setScale] = useState(1);
     const [offset, setOffset] = useState({ x: 100, y: 100 });
     const [isDragging, setIsDragging] = useState(false);
+    const [activeNodeId, setActiveNodeId] = useState<string | null>(null);
     const canvasRef = useRef<HTMLDivElement>(null);
 
     // Calculate layout positions
@@ -153,15 +154,16 @@ export const MindmapCanvas: React.FC<CanvasProps> = ({ state, onBranch, onReply,
                 {Object.entries(layout).map(([id, pos]) => {
                     const node = state.nodes[id];
                     const horizontalChildren = node.childrenIds.filter(cid => !!state.nodes[cid].isBranch);
+                    const isActive = activeNodeId === id;
 
                     return (
                         <div
                             key={id}
-                            className="absolute"
+                            className="absolute transition-[z-index] duration-300"
                             style={{
                                 left: pos.x,
                                 top: pos.y,
-                                zIndex: 10
+                                zIndex: isActive ? 50 : 10
                             }}
                         >
                             <ChatNode
@@ -170,6 +172,7 @@ export const MindmapCanvas: React.FC<CanvasProps> = ({ state, onBranch, onReply,
                                 onBranch={onBranch}
                                 onReply={onReply}
                                 onToggleCollapse={onToggleCollapse}
+                                onActive={setActiveNodeId}
                             />
                         </div>
                     );

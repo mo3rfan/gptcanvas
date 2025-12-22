@@ -7,6 +7,7 @@ interface ChatNodeProps {
     onBranch: (parentId: string, highlightedText: string, prompt: string) => void;
     onReply: (parentId: string, prompt: string) => void;
     onToggleCollapse: (id: string) => void;
+    onActive?: (id: string | null) => void;
 }
 
 export const ChatNode: React.FC<ChatNodeProps> = ({
@@ -15,6 +16,7 @@ export const ChatNode: React.FC<ChatNodeProps> = ({
     onBranch,
     onReply,
     onToggleCollapse,
+    onActive,
 }) => {
     const [selection, setSelection] = useState<{ text: string; rect: DOMRect } | null>(null);
     const [showInput, setShowInput] = useState(false);
@@ -41,6 +43,7 @@ export const ChatNode: React.FC<ChatNodeProps> = ({
         setBranchText(branch ? selection?.text || null : null); // Capture text before clearing selection
         setShowInput(true);
         setSelection(null);
+        onActive?.(node.id);
     };
 
     const handleSubmit = (e: React.FormEvent) => {
@@ -55,6 +58,7 @@ export const ChatNode: React.FC<ChatNodeProps> = ({
         setInput('');
         setShowInput(false);
         setBranchText(null);
+        onActive?.(null);
     };
 
     const renderContent = () => {
@@ -159,17 +163,27 @@ export const ChatNode: React.FC<ChatNodeProps> = ({
 
             {showInput && (
                 <div className={isBranching
-                    ? "absolute left-[calc(100%+2rem)] top-0 w-[450px] z-20 animate-in fade-in slide-in-from-left-6 duration-300"
+                    ? "absolute left-[calc(100%+2rem)] -top-16 w-[450px] z-[100] animate-in fade-in slide-in-from-left-6 duration-300"
                     : "mt-12 animate-in fade-in slide-in-from-top-4 duration-300"
                 }>
-                    {isBranching && (
-                        <div className="absolute -left-8 top-10 w-8 h-0.5 bg-blue-500/40" />
-                    )}
-                    <form onSubmit={handleSubmit} className="flex flex-col gap-3 bg-zinc-900 border-2 border-blue-500/40 p-4 rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.6)] backdrop-blur-md">
+                    <form onSubmit={handleSubmit} className="flex flex-col gap-3 bg-zinc-900 border-2 border-blue-500/40 p-4 rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.8)] backdrop-blur-xl relative">
+                        <button
+                            type="button"
+                            onClick={() => setShowInput(false)}
+                            className="absolute top-3 right-3 text-zinc-500 hover:text-white transition-colors p-1"
+                        >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+
                         <div className="flex items-center gap-2 mb-1">
                             <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
                             <span className="text-[10px] font-black uppercase tracking-widest text-blue-400">
                                 {isBranching ? "New Branch Follow-up" : "Continuing Thread"}
+                            </span>
+                            <span className="text-[8px] text-zinc-600 font-bold ml-auto mr-6 uppercase tracking-widest">
+                                Press ESC to Cancel
                             </span>
                         </div>
                         <div className="flex gap-3 items-end">
@@ -180,7 +194,10 @@ export const ChatNode: React.FC<ChatNodeProps> = ({
                                 placeholder={isBranching ? "Ask about the selection..." : "Type your reply..."}
                                 className="flex-1 bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-[14px] text-zinc-100 h-28 resize-none focus:outline-none focus:border-blue-500/50 transition-colors"
                                 onKeyDown={(e) => {
-                                    if (e.key === 'Enter' && !e.shiftKey) {
+                                    if (e.key === 'Escape') {
+                                        setShowInput(false);
+                                        onActive?.(null);
+                                    } else if (e.key === 'Enter' && !e.shiftKey) {
                                         e.preventDefault();
                                         handleSubmit(e as any);
                                     }
