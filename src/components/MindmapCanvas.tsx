@@ -29,7 +29,7 @@ function calculateLayout(
 
     // Use reported height or estimate
     const actualHeight = node.height || NODE_HEIGHT_ESTIMATE;
-    let totalBlockHeight = actualHeight + NODE_SPACING;
+    const totalBlockHeight = actualHeight + NODE_SPACING;
     let maxChildY = currentY + totalBlockHeight;
 
     if (!node.isCollapsed) {

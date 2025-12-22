@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { SettingsSidebar } from './components/SettingsSidebar';
 import { MindmapCanvas } from './components/MindmapCanvas';
 import type { ChatState, MessageNode, Settings } from './types';
@@ -19,25 +19,25 @@ function App() {
     return stored ? JSON.parse(stored) : INITIAL_SETTINGS;
   });
 
+  const handleSettingsChange = (newSettings: Settings) => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(newSettings));
+    setSettings(newSettings);
+    setState(prev => ({
+      ...prev,
+      selectedModel: newSettings.model,
+      apiUrl: newSettings.apiUrl,
+      apiKey: newSettings.apiKey,
+    }));
+  };
+
   const [state, setState] = useState<ChatState>(() => ({
     nodes: {},
     rootId: null,
-    selectedModel: settings.model,
-    apiUrl: settings.apiUrl,
-    apiKey: settings.apiKey,
+    selectedModel: settings.model, // Initialize with current settings
+    apiUrl: settings.apiUrl,       // Initialize with current settings
+    apiKey: settings.apiKey,       // Initialize with current settings
     tokenStats: { input: 0, output: 0, total: 0 },
   }));
-
-  // Persist settings whenever they change
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
-    setState(prev => ({
-      ...prev,
-      selectedModel: settings.model,
-      apiUrl: settings.apiUrl,
-      apiKey: settings.apiKey,
-    }));
-  }, [settings]);
 
 
   const updateNodeContent = (id: string, content: string) => {
@@ -203,7 +203,7 @@ function App() {
     <div className="flex h-screen bg-zinc-950 text-zinc-100 font-sans">
       <SettingsSidebar
         settings={settings}
-        onSettingsChange={setSettings}
+        onSettingsChange={handleSettingsChange}
         tokenStats={state.tokenStats}
       />
 

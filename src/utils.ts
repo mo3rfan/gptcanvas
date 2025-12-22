@@ -1,157 +1,112 @@
-// Simple token estimation: ~4 characters per token
-export const estimateTokens = (text: string): number => {
-    return Math.ceil(text.length / 4);
+// src/utils.ts
+
+export const preprocessLatex = (content: string): string => {
+  const latexRegex = new RegExp('\\[([^\\[\\]]+)\\]', 'g');
+  return content.replace(latexRegex, (formula) => {
+    const cleanedFormula = formula.replace(/;=;/g, '=').replace(/,/g, ' ');
+    return `$$${cleanedFormula}$$`;
+  });
 };
 
 export const simulateStreaming = async (
-    content: string,
-    onToken: (token: string) => void
+  response: string,
+  onUpdate: (chunk: string) => void,
+  delay: number = 10
 ) => {
-    const tokens = content.split(' ');
-    for (const token of tokens) {
-        onToken(token + ' ');
-        // Faster streaming: 10-30ms instead of 50-100ms
-        await new Promise((resolve) => setTimeout(resolve, 10 + Math.random() * 20));
-    }
+  for (let i = 0; i < response.length; i++) {
+    onUpdate(response[i]);
+    await new Promise((resolve) => setTimeout(resolve, delay));
+  }
 };
 
-export const mockLLMResponse = (prompt: string, context?: string): string => {
+export const mockLLMResponse = (prompt: string, context?: string | null): string => {
     if (context) {
-        return `<think>
-The user is asking a follow-up about "${prompt}" in the context of "${context}".
-I should provide a technical deep-dive into the mathematical and programmatic aspects.
-Calculating relationship...
-Optimizing response structure...
-</think>
-
-### Follow-up on: *"${context}"*
-
-Here is a technical detail related to **${prompt}**:
-
-#### Code Example (Python)
-\`\`\`python
-def calculate_gravity(mass, distance):
-    # Newton's law of universal gravitation
-    G = 6.67430e-11
-    return G * mass / (distance ** 2)
-\`\`\`
-
-#### Mathematical Physics
-The formula for gravitational attraction is:
-$$F = G \\frac{m_1 m_2}{r^2}$$
-
-This demonstrates how the branched context relates to the core logic.`;
+        return `This is a mocked response based on the context: "${context}" and your question: "${prompt}". Highlighting text allows for more targeted follow-ups, enabling deeper exploration of specific concepts within the conversation flow. This branching creates a more organized and detailed mind map.`;
     }
-    return `<think>
-Processing request for: "${prompt}"
-Analyzing GPTCanvas core architecture v1.7.0...
-Generating rich content response with Markdown and LaTeX...
-Complete.
-</think>
-
-### Hello! This is a rich response to: **"${prompt}"**
-
-You can write complex math like the **Quadratic Formula**:
-$$x = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}$$
-
-And snippets of code:
-\`\`\`javascript
-const gptCanvas = {
-  version: "1.7.0",
-  features: ["Markdown", "LaTeX", "ThinkingMode"]
+    return `This is a mocked response to your question: "${prompt}". The actual LLM API is not being called. To enable live API calls, remove the '?mock' parameter from the URL. Here's a code block:\n\n\`\`\`javascript\nconsole.log('Hello, world!');\n\`\`\`\n\nAnd here is the formula you mentioned: [ G_{\\mu\\nu} + \\Lambda,g_{\\mu\\nu} ;=; \\frac{8\\pi G}{c^4},T_{\\mu\\nu} ]\n\nAnd here is a list:\n- Item 1\n- Item 2\n- Item 3`;
 };
-console.log("Thinking mode active!");
-\`\`\`
 
-Highlight any text to start a branch!`;
-};
 export const fetchLLMResponse = async (
     apiUrl: string,
     apiKey: string,
     model: string,
     prompt: string,
     context: string | null,
-    onToken: (token: string) => void
+    onUpdate: (token: string) => void
 ) => {
-    const messages = [];
-
-    if (context) {
-        messages.push({
-            role: "system",
-            content: `You are a helpful assistant. Provide a concise follow-up based on the following context: "${context}". Use Markdown and LaTeX where appropriate.`
-        });
-    }
-
-    messages.push({ role: "user", content: prompt });
-
-    const isAzure = apiUrl.includes("azure.com");
-    let finalUrl = apiUrl;
-    const headers: Record<string, string> = {
-        "Content-Type": "application/json",
+    const body = {
+        model,
+        messages: [
+            {
+                role: 'system',
+                content: `You are a helpful assistant integrated into a mind-mapping application. 
+                Users can branch conversations from highlighted text.
+                When a user provides context from highlighted text, your response should focus on that context.
+                Format your responses using Markdown.`
+            },
+            {
+                role: 'user',
+                content: context ? `Context: "${context}"\n\nQuestion: "${prompt}"` : prompt
+            }
+        ],
+        stream: true,
     };
 
-    if (isAzure) {
-        headers["api-key"] = apiKey;
-        // Azure AI Inference often needs /chat/completions but sometimes the user provides the full base
-        if (!finalUrl.includes("/chat/completions")) {
-            finalUrl = `${finalUrl.replace(/\/$/, "")}/chat/completions`;
-        }
-        // Append api-version if not present
-        if (!finalUrl.includes("api-version=")) {
-            finalUrl += (finalUrl.includes("?") ? "&" : "?") + "api-version=2024-05-01-preview";
-        }
-    } else {
-        headers["Authorization"] = `Bearer ${apiKey}`;
-        headers["HTTP-Referer"] = "https://gptcanvas.local"; // Required by OpenRouter
-        headers["X-Title"] = "GPTCanvas"; // Required by OpenRouter
-        if (!finalUrl.includes("/chat/completions")) {
-            finalUrl = `${finalUrl.replace(/\/$/, "")}/chat/completions`;
-        }
-    }
-
     try {
-        const response = await fetch(finalUrl, {
-            method: "POST",
-            headers,
-            body: JSON.stringify({
-                model,
-                messages,
-                stream: true,
-            }),
+        const response = await fetch(`${apiUrl}/chat/completions`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${apiKey}`
+            },
+            body: JSON.stringify(body)
         });
 
         if (!response.ok) {
-            throw new Error(`API request failed with status ${response.status}`);
+            const errorBody = await response.json();
+            onUpdate(`Error: ${errorBody.error.message}`);
+            return;
         }
 
         const reader = response.body?.getReader();
+        if (!reader) {
+            onUpdate('Error: Could not read stream.');
+            return;
+        }
         const decoder = new TextDecoder();
-
-        if (!reader) return;
+        let buffer = '';
 
         while (true) {
             const { done, value } = await reader.read();
             if (done) break;
 
-            const chunk = decoder.decode(value);
-            const lines = chunk.split("\n");
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split('\n');
+            buffer = lines.pop() || '';
 
             for (const line of lines) {
-                if (line.trim().startsWith("data: ")) {
-                    const data = line.trim().slice(6);
-                    if (data === "[DONE]") break;
+                if (line.startsWith('data: ')) {
+                    const jsonStr = line.substring(6);
+                    if (jsonStr === '[DONE]') {
+                        return;
+                    }
                     try {
-                        const json = JSON.parse(data);
-                        const token = json.choices[0]?.delta?.content || "";
-                        if (token) onToken(token);
+                        const chunk = JSON.parse(jsonStr);
+                        if (chunk.choices[0].delta.content) {
+                            onUpdate(chunk.choices[0].delta.content);
+                        }
                     } catch (e) {
-                        // Handle potential partial JSON or other errors
+                        console.error('Error parsing stream chunk:', e);
                     }
                 }
             }
         }
-    } catch (error) {
-        console.error("LLM Fetch Error:", error);
-        onToken(`\n\n**Error:** ${error instanceof Error ? error.message : "Failed to connect to the API. Check your settings and API key."}`);
+    } catch (e: unknown) {
+        onUpdate(`Network Error: ${e instanceof Error ? e.message : String(e)}`);
     }
+};
+
+// A very rough token estimator
+export const estimateTokens = (text: string): number => {
+    return Math.ceil(text.length / 4);
 };

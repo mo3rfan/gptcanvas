@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import type { MessageNode } from '../types';
+import { preprocessLatex } from '../utils';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
@@ -8,6 +9,12 @@ import rehypeKatex from 'rehype-katex';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import 'katex/dist/katex.min.css';
+
+interface CodeProps extends React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement> {
+    inline?: boolean;
+    className?: string;
+    children?: React.ReactNode;
+}
 
 interface ChatNodeProps {
     node: MessageNode;
@@ -35,7 +42,7 @@ export const ChatNode: React.FC<ChatNodeProps> = ({
     const [isBranching, setIsBranching] = useState(false);
     const [branchText, setBranchText] = useState<string | null>(null);
     const [input, setInput] = useState('');
-    const [isThinkingExpanded, setIsThinkingExpanded] = useState(false);
+    const [userExpandedPreference, setUserExpandedPreference] = useState(false);
     const [contextMenu, setContextMenu] = useState<{ x: number, y: number, show: boolean }>({ x: 0, y: 0, show: false });
     const contentRef = useRef<HTMLDivElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
@@ -68,14 +75,15 @@ export const ChatNode: React.FC<ChatNodeProps> = ({
         }
     }, [node.content, isThinkingDone]);
 
-    // Auto-collapse when done
-    useEffect(() => {
+    const actualIsThinkingExpanded = React.useMemo(() => {
         if (isThinkingDone) {
-            setIsThinkingExpanded(false);
-        } else if (hasThinkTag) {
-            setIsThinkingExpanded(true);
+            return false; // Force collapsed when done
         }
-    }, [isThinkingDone, hasThinkTag]);
+        if (hasThinkTag) {
+            return true; // Force expanded when thinking starts
+        }
+        return userExpandedPreference; // Otherwise, use user's preference
+    }, [isThinkingDone, hasThinkTag, userExpandedPreference]);
 
     const handleMouseUp = () => {
         const sel = window.getSelection();
@@ -133,7 +141,7 @@ export const ChatNode: React.FC<ChatNodeProps> = ({
     };
 
     const memoizedContent = React.useMemo(() => {
-        let content = node.content;
+        let content = preprocessLatex(node.content);
         let thoughtContent = '';
 
         if (hasThinkTag) {
@@ -147,9 +155,9 @@ export const ChatNode: React.FC<ChatNodeProps> = ({
             }
         }
 
-        const handleTextHighlights = (children: any): any => {
+        const handleTextHighlights = (children: React.ReactNode): React.ReactNode => {
             if (typeof children === 'string') {
-                let parts: (string | React.ReactNode)[] = [children];
+                const parts: (string | React.ReactNode)[] = [children];
                 const sortedBranches = [...branchChildren].sort((a, b) => (b.highlightedText?.length || 0) - (a.highlightedText?.length || 0));
 
                 sortedBranches.forEach(branch => {
@@ -204,20 +212,20 @@ export const ChatNode: React.FC<ChatNodeProps> = ({
                 {hasThinkTag && (
                     <div className="mb-4 border border-zinc-700/50 rounded-lg overflow-hidden bg-zinc-950/50">
                         <button
-                            onClick={() => setIsThinkingExpanded(!isThinkingExpanded)}
+                            onClick={() => setUserExpandedPreference(!userExpandedPreference)}
                             className="w-full flex items-center justify-between px-3 py-2 text-[10px] font-black uppercase tracking-widest text-zinc-500 hover:text-zinc-300 transition-colors bg-zinc-900/30 border-b border-zinc-800/50"
                         >
                             <span className="flex items-center gap-2">
                                 <div className={`w-1.5 h-1.5 rounded-full ${isThinkingDone ? 'bg-zinc-600' : 'bg-blue-500 animate-pulse'}`} />
                                 {isThinkingDone ? "Thought Process" : "Thinking..."}
                             </span>
-                            <span className="opacity-50">{isThinkingExpanded ? "Collapse" : "Expand"}</span>
+                            <span className="opacity-50">{actualIsThinkingExpanded ? "Collapse" : "Expand"}</span>
                         </button>
 
-                        {(isThinkingExpanded || !isThinkingDone) && (
+                        {(actualIsThinkingExpanded || !isThinkingDone) && (
                             <div
                                 ref={thinkingRef}
-                                className={`p-4 text-[13px] font-mono leading-relaxed text-zinc-400 overflow-y-auto transition-all duration-300 ease-in-out scrollbar-thin scrollbar-thumb-zinc-700 scrollbar-track-transparent ${isThinkingExpanded ? 'max-h-[300px]' : 'max-h-[100px]'
+                                className={`p-4 text-[13px] font-mono leading-relaxed text-zinc-400 overflow-y-auto transition-all duration-300 ease-in-out scrollbar-thin scrollbar-thumb-zinc-700 scrollbar-track-transparent ${actualIsThinkingExpanded ? 'max-h-[300px]' : 'max-h-[100px]'
                                     }`}
                                 style={{
                                     scrollbarWidth: 'thin',
@@ -234,7 +242,7 @@ export const ChatNode: React.FC<ChatNodeProps> = ({
                     remarkPlugins={[remarkGfm, remarkMath]}
                     rehypePlugins={[rehypeKatex]}
                     components={{
-                        code({ node, inline, className, children, ...props }: any) {
+                        code({ inline, className, children, ...props }: CodeProps) {
                             const match = /language-(\w+)/.exec(className || '');
                             return !inline && match ? (
                                 <div className="my-4 rounded-lg overflow-hidden border border-zinc-700 shadow-2xl">
@@ -258,21 +266,21 @@ export const ChatNode: React.FC<ChatNodeProps> = ({
                                 </code>
                             );
                         },
-                        p: ({ children }: any) => <p className="mb-4 last:mb-0">{handleTextHighlights(children)}</p>,
-                        li: ({ children }: any) => <li className="mb-1">{handleTextHighlights(children)}</li>,
-                        h1: ({ children }: any) => <h1 className="text-2xl font-bold mb-4">{handleTextHighlights(children)}</h1>,
-                        h2: ({ children }: any) => <h2 className="text-xl font-bold mb-3">{handleTextHighlights(children)}</h2>,
-                        h3: ({ children }: any) => <h3 className="text-lg font-bold mb-2">{handleTextHighlights(children)}</h3>,
-                        h4: ({ children }: any) => <h4 className="text-base font-bold mb-2">{handleTextHighlights(children)}</h4>,
-                        h5: ({ children }: any) => <h5 className="text-sm font-bold mb-1">{handleTextHighlights(children)}</h5>,
-                        h6: ({ children }: any) => <h6 className="text-xs font-bold mb-1">{handleTextHighlights(children)}</h6>,
+                        p: ({ children }: { children: React.ReactNode }) => <p className="mb-4 last:mb-0">{handleTextHighlights(children)}</p>,
+                        li: ({ children }: { children: React.ReactNode }) => <li className="mb-1">{handleTextHighlights(children)}</li>,
+                        h1: ({ children }: { children: React.ReactNode }) => <h1 className="text-2xl font-bold mb-4">{handleTextHighlights(children)}</h1>,
+                        h2: ({ children }: { children: React.ReactNode }) => <h2 className="text-xl font-bold mb-3">{handleTextHighlights(children)}</h2>,
+                        h3: ({ children }: { children: React.ReactNode }) => <h3 className="text-lg font-bold mb-2">{handleTextHighlights(children)}</h3>,
+                        h4: ({ children }: { children: React.ReactNode }) => <h4 className="text-base font-bold mb-2">{handleTextHighlights(children)}</h4>,
+                        h5: ({ children }: { children: React.ReactNode }) => <h5 className="text-sm font-bold mb-1">{handleTextHighlights(children)}</h5>,
+                        h6: ({ children }: { children: React.ReactNode }) => <h6 className="text-xs font-bold mb-1">{handleTextHighlights(children)}</h6>,
                     }}
                 >
                     {content}
                 </ReactMarkdown>
             </>
         );
-    }, [node.content, branchChildren, isThinkingExpanded, isThinkingDone, hasThinkTag, onToggleCollapse]);
+    }, [node.content, branchChildren, actualIsThinkingExpanded, isThinkingDone, hasThinkTag, onToggleCollapse, userExpandedPreference]);
 
     return (
         <div className="flex flex-col gap-2 w-[550px] group/node">
@@ -393,7 +401,7 @@ export const ChatNode: React.FC<ChatNodeProps> = ({
                                         onActive?.(null);
                                     } else if (e.key === 'Enter' && !e.shiftKey) {
                                         e.preventDefault();
-                                        handleSubmit(e as any);
+                                        handleSubmit(e as React.FormEvent);
                                     }
                                 }}
                             />
