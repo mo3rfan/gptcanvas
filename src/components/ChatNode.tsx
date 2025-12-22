@@ -251,7 +251,6 @@ export const ChatNode: React.FC<ChatNodeProps> = ({
                                         <span className="opacity-50">Code Snippet</span>
                                     </div>
                                     <SyntaxHighlighter
-                                        {...props}
                                         style={vscDarkPlus}
                                         language={match[1]}
                                         PreTag="div"
@@ -266,14 +265,14 @@ export const ChatNode: React.FC<ChatNodeProps> = ({
                                 </code>
                             );
                         },
-                        p: ({ children }: { children: React.ReactNode }) => <p className="mb-4 last:mb-0">{handleTextHighlights(children)}</p>,
-                        li: ({ children }: { children: React.ReactNode }) => <li className="mb-1">{handleTextHighlights(children)}</li>,
-                        h1: ({ children }: { children: React.ReactNode }) => <h1 className="text-2xl font-bold mb-4">{handleTextHighlights(children)}</h1>,
-                        h2: ({ children }: { children: React.ReactNode }) => <h2 className="text-xl font-bold mb-3">{handleTextHighlights(children)}</h2>,
-                        h3: ({ children }: { children: React.ReactNode }) => <h3 className="text-lg font-bold mb-2">{handleTextHighlights(children)}</h3>,
-                        h4: ({ children }: { children: React.ReactNode }) => <h4 className="text-base font-bold mb-2">{handleTextHighlights(children)}</h4>,
-                        h5: ({ children }: { children: React.ReactNode }) => <h5 className="text-sm font-bold mb-1">{handleTextHighlights(children)}</h5>,
-                        h6: ({ children }: { children: React.ReactNode }) => <h6 className="text-xs font-bold mb-1">{handleTextHighlights(children)}</h6>,
+                        p: ({ children, ...props }) => <p className="mb-4 last:mb-0" {...props}>{handleTextHighlights(children)}</p>,
+                        li: ({ children, ...props }) => <li className="mb-1" {...props}>{handleTextHighlights(children)}</li>,
+                        h1: ({ children, ...props }) => <h1 className="text-2xl font-bold mb-4" {...props}>{handleTextHighlights(children)}</h1>,
+                        h2: ({ children, ...props }) => <h2 className="text-xl font-bold mb-3" {...props}>{handleTextHighlights(children)}</h2>,
+                        h3: ({ children, ...props }) => <h3 className="text-lg font-bold mb-2" {...props}>{handleTextHighlights(children)}</h3>,
+                        h4: ({ children, ...props }) => <h4 className="text-base font-bold mb-2" {...props}>{handleTextHighlights(children)}</h4>,
+                        h5: ({ children, ...props }) => <h5 className="text-sm font-bold mb-1" {...props}>{handleTextHighlights(children)}</h5>,
+                        h6: ({ children, ...props }) => <h6 className="text-xs font-bold mb-1" {...props}>{handleTextHighlights(children)}</h6>,
                     }}
                 >
                     {content}
