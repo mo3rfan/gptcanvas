@@ -36,7 +36,8 @@ export const fetchLLMResponse = async (
                 content: `You are a helpful assistant integrated into a mind-mapping application. 
                 Users can branch conversations from highlighted text.
                 When a user provides context from highlighted text, your response should focus on that context.
-                Format your responses using Markdown. When you include mathematical formulas, always enclose them in double dollar signs ($$) for LaTeX rendering.`
+                Format your responses using Markdown. When you include mathematical formulas, always enclose them in double dollar signs ($$) for LaTeX rendering.
+                When creating tables, always include a header row. Ensure table content is clearly formatted and readable.`
             },
             {
                 role: 'user',
