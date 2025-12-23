@@ -3,14 +3,14 @@
 
 
 export const simulateStreaming = async (
-  response: string,
-  onUpdate: (chunk: string) => void,
-  delay: number = 10
+    response: string,
+    onUpdate: (chunk: string) => void,
+    delay: number = 10
 ) => {
-  for (let i = 0; i < response.length; i++) {
-    onUpdate(response[i]);
-    await new Promise((resolve) => setTimeout(resolve, delay));
-  }
+    for (let i = 0; i < response.length; i++) {
+        onUpdate(response[i]);
+        await new Promise((resolve) => setTimeout(resolve, delay));
+    }
 };
 
 export const mockLLMResponse = (prompt: string, context?: string | null): string => {
@@ -36,7 +36,7 @@ export const fetchLLMResponse = async (
                 content: `You are a helpful assistant integrated into a mind-mapping application. 
                 Users can branch conversations from highlighted text.
                 When a user provides context from highlighted text, your response should focus on that context.
-                Format your responses using Markdown. When you include mathematical formulas, always enclose them in double dollar signs ($$) for LaTeX rendering.
+                Format your responses using Markdown. When you include mathematical formulas, always enclose them in double dollar signs ($$) for LaTeX rendering, even the smaller in line formulas.
                 When creating tables, always include a header row. Ensure table content is clearly formatted and readable.`
             },
             {
