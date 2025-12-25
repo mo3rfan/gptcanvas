@@ -255,9 +255,13 @@ export const ChatNode: React.FC<ChatNodeProps> = ({
                 </div>
 
                 {node.highlightedText && (
-                    <div className="flex items-center gap-2 text-[10px] uppercase font-black text-zinc-500 mb-2 tracking-widest border-b border-zinc-800 pb-2">
-                        <span className="bg-zinc-800 px-1.5 py-0.5 rounded text-zinc-400">Context</span>
-                        <span className="truncate max-w-[200px]">"{node.highlightedText}"</span>
+                    <div className="bg-zinc-800/50 border border-zinc-700/80 rounded-lg p-3 text-[12px] mb-4">
+                        <div className="flex items-center gap-2 text-[10px] uppercase font-black text-zinc-400 mb-2 tracking-widest">
+                            <span className="bg-zinc-900/70 px-1.5 py-0.5 rounded text-zinc-300 border border-zinc-700">Context from parent</span>
+                        </div>
+                        <p className="text-zinc-300 truncate font-mono">
+                           "{node.highlightedText}"
+                        </p>
                     </div>
                 )}
 
