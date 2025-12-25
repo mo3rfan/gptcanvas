@@ -1,3 +1,30 @@
+import type { Message, MessageNode, Nodes } from './types';
+
+export const constructMessageHistory = (
+  leafNodeId: string,
+  nodes: Nodes,
+): Message[] => {
+  const history: Message[] = [];
+  let currentNodeId: string | null = leafNodeId;
+
+  while (currentNodeId) {
+    const currentNode: MessageNode = nodes[currentNodeId];
+    if (!currentNode) {
+      break;
+    }
+
+    // Add the current node's message to the beginning of the history
+    history.unshift({
+      role: currentNode.role,
+      content: currentNode.content,
+    });
+
+    // Move to the parent node
+    currentNodeId = currentNode.parentId;
+  }
+
+  return history;
+};
 // src/utils.ts
 
 
@@ -13,10 +40,15 @@ export const simulateStreaming = async (
     }
 };
 
-export const mockLLMResponse = (prompt: string, context?: string | null): string => {
-    if (context) {
-        return `This is a mocked response based on the context: "${context}" and your question: "${prompt}". Highlighting text allows for more targeted follow-ups, enabling deeper exploration of specific concepts within the conversation flow. This branching creates a more organized and detailed mind map.`;
+export const mockLLMResponse = (messages: Message[]): string => {
+    const lastMessage = messages[messages.length - 1];
+    const prompt = lastMessage.content;
+
+    // Check if the prompt is a reply or a new branch
+    if (messages.length > 2) {
+        return `This is a mocked response based on the conversation history and your latest prompt: "${prompt}".`;
     }
+    
     return `This is a mocked response to your question: "${prompt}". The actual LLM API is not being called. To enable live API calls, remove the '?mock' parameter from the URL. Here's a code block:\n\n\`\`\`javascript\nconsole.log('Hello, world!');\n\`\`\`\n\nAnd here is the formula you mentioned: $$G_{\\mu\\nu} + \\Lambda g_{\\mu\\nu} = \\frac{8\\pi G}{c^4} T_{\\mu\\nu}$$\n\nAnd here is the quadratic formula: $$x=\\frac{-b\\pm\\sqrt{b^{2}-4ac}}{2a}$$\n\nAnd here is another formula: $$ax^{2}+bx+c=0 \\quad (a \\neq 0) $$\n\nAnd another one: $$\\boxed{x=\\frac{-b\\pm\\sqrt{b^{2}-4ac}}{2a}}$$`;
 };
 
@@ -24,8 +56,7 @@ export const fetchLLMResponse = async (
     apiUrl: string,
     apiKey: string,
     model: string,
-    prompt: string,
-    context: string | null,
+    messages: Message[],
     onUpdate: (token: string) => void
 ) => {
     const body = {
@@ -39,10 +70,7 @@ export const fetchLLMResponse = async (
                 Format your responses using Markdown. All LaTeX must be enclosed in double dollar signs ($$...$$). Raw LaTeX environments such as \begin{...}...\end{...} are forbidden unless wrapped in $$...$$.
                 When creating tables, always include a header row. Ensure table content is clearly formatted and readable.`
             },
-            {
-                role: 'user',
-                content: context ? `Context: "${context}"\n\nQuestion: "${prompt}"` : prompt
-            }
+            ...messages
         ],
         stream: true,
     };
@@ -105,3 +133,4 @@ export const fetchLLMResponse = async (
 export const estimateTokens = (text: string): number => {
     return Math.ceil(text.length / 4);
 };
+

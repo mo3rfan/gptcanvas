@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { SettingsSidebar } from './components/SettingsSidebar';
 import { MindmapCanvas } from './components/MindmapCanvas';
 import type { ChatState, MessageNode, Settings } from './types';
-import { simulateStreaming, mockLLMResponse, fetchLLMResponse, estimateTokens } from './utils';
+import { constructMessageHistory, simulateStreaming, mockLLMResponse, fetchLLMResponse, estimateTokens } from './utils';
 import { v4 as uuidv4 } from 'uuid';
 
 const STORAGE_KEY = 'gptcanvas_settings';
@@ -76,21 +76,7 @@ function App() {
     const userId = uuidv4();
     const assistantId = uuidv4();
 
-    // Calculate input tokens
-    const inputText = highlightedText ? `${highlightedText}\n${prompt}` : prompt;
-    const inputTokens = estimateTokens(inputText);
-
-    // Update input token count
-    setState(prev => ({
-      ...prev,
-      tokenStats: {
-        ...prev.tokenStats,
-        input: prev.tokenStats.input + inputTokens,
-        total: prev.tokenStats.total + inputTokens,
-      }
-    }));
-
-    // 1. Prepare Nodes
+    // 1. Prepare Nodes & History
     const userNode: MessageNode = {
       id: userId,
       role: 'user',
@@ -98,7 +84,7 @@ function App() {
       parentId,
       highlightedText,
       isBranch: !!highlightedText,
-      childrenIds: [assistantId], // Link to assistant immediately
+      childrenIds: [assistantId],
       isCollapsed: false,
     };
 
@@ -107,17 +93,28 @@ function App() {
       role: 'assistant',
       content: '', // Streaming starts later
       parentId: userId,
-      isBranch: false, // Responses stay in the same column as prompts
+      isBranch: false,
       childrenIds: [],
       isCollapsed: false,
     };
+    
+    // Construct history before updating state
+    const history = parentId ? constructMessageHistory(parentId, state.nodes) : [];
 
-    // 2. Add both nodes atomically
-    setState((prev) => {
+    if (highlightedText) {
+      history.push({ role: 'user', content: `Context: "${highlightedText}"\n\nQuestion: "${prompt}"` });
+    } else {
+      history.push({ role: 'user', content: prompt });
+    }
+
+    // Calculate input tokens from the constructed history
+    const inputTokens = estimateTokens(history.map(m => m.content).join('\n'));
+    
+    setState(prev => {
       const newNodes = {
         ...prev.nodes,
         [userId]: userNode,
-        [assistantId]: assistantNode
+        [assistantId]: assistantNode,
       };
 
       if (parentId && newNodes[parentId]) {
@@ -131,6 +128,11 @@ function App() {
         ...prev,
         nodes: newNodes,
         rootId: prev.rootId || userId,
+        tokenStats: {
+          ...prev.tokenStats,
+          input: prev.tokenStats.input + inputTokens,
+          total: prev.tokenStats.total + inputTokens,
+        }
       };
     });
 
@@ -138,7 +140,7 @@ function App() {
     const isMock = new URLSearchParams(window.location.search).has('mock');
 
     if (isMock) {
-      const response = mockLLMResponse(prompt, highlightedText);
+      const response = mockLLMResponse(history);
       let fullContent = '';
       await simulateStreaming(response, (token) => {
         fullContent += token;
@@ -160,8 +162,7 @@ function App() {
         settings.apiUrl,
         settings.apiKey,
         settings.model,
-        prompt,
-        highlightedText || null,
+        history,
         (token: string) => {
           fullContent += token;
           updateNodeContent(assistantId, fullContent);

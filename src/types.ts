@@ -13,6 +13,13 @@ export interface MessageNode {
     position?: { x: number; y: number };
 }
 
+export type Nodes = Record<string, MessageNode>;
+
+export interface Message {
+    role: Role;
+    content: string;
+}
+
 export interface TokenStats {
     input: number;
     output: number;
