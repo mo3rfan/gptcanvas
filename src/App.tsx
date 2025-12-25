@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { SettingsSidebar } from './components/SettingsSidebar';
 import { MindmapCanvas } from './components/MindmapCanvas';
 import type { ChatState, MessageNode, Settings } from './types';
@@ -20,6 +20,26 @@ function App() {
   });
 
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const urlSettings: Partial<Settings> = {};
+    if (params.has('apiUrl')) {
+      urlSettings.apiUrl = params.get('apiUrl')!;
+    }
+    if (params.has('apiKey')) {
+      urlSettings.apiKey = params.get('apiKey')!;
+    }
+    if (params.has('model')) {
+      urlSettings.model = params.get('model')!;
+    }
+    if (Object.keys(urlSettings).length > 0) {
+      setSettings(prevSettings => ({ ...prevSettings, ...urlSettings }));
+    }
+    if (params.has('sidebarOpen')) {
+      setIsSidebarOpen(params.get('sidebarOpen') === 'true');
+    }
+  }, []);
 
   const handleSettingsChange = (newSettings: Settings) => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(newSettings));
